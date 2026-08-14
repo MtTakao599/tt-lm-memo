@@ -8,11 +8,13 @@ function dateAt(hour: number, minute: number, daysAgo = 0): string {
 }
 
 function dummyMemo(
-  memo: Omit<Memo, 'createdAt' | 'updatedAt'> & {
+  memo: Omit<Memo, 'createdAt' | 'updatedAt' | 'photos'> & {
     createdAt: string
+    photos?: Memo['photos']
   },
 ): Memo {
   return {
+    photos: [],
     ...memo,
     updatedAt: memo.createdAt,
   }

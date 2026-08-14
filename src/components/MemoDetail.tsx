@@ -1,5 +1,6 @@
 import type { Memo, Status } from '../types/memo'
 import { formatMemoDate } from '../utils/date'
+import { MemoPhotoViewer } from './MemoPhotoViewer'
 import { MemoStatusControl } from './MemoStatusControl'
 
 type MemoDetailProps = {
@@ -71,6 +72,8 @@ export function MemoDetail({
           <p className="detail-label">本文</p>
           <p className="detail-body">{memo.body}</p>
         </div>
+
+        <MemoPhotoViewer photos={memo.photos} />
 
         <dl className="detail-meta">
           <div>

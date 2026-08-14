@@ -82,6 +82,12 @@
   padding: 16px 16px 32px;
 }
 
+.list-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .new-memo-btn {
   width: 100%;
   min-height: 52px;
@@ -92,6 +98,10 @@
   font-size: 1.1rem;
   font-weight: 700;
   letter-spacing: 0.04em;
+}
+
+.pdf-btn {
+  width: 100%;
 }
 
 .new-memo-btn:hover {
@@ -188,11 +198,43 @@
   margin-top: 8px;
 }
 
+.memo-card-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 10px;
+}
+
 .memo-card-body {
-  margin: 10px 0 0;
+  margin: 0;
+  flex: 1 1 auto;
+  min-width: 0;
   font-size: 1rem;
   line-height: 1.65;
   overflow-wrap: anywhere;
+}
+
+.memo-card-photo {
+  flex: 0 0 64px;
+  width: 64px;
+  text-align: center;
+}
+
+.memo-card-photo img {
+  display: block;
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 4px;
+  background: #eef1f5;
+}
+
+.memo-card-photo span {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  font-weight: 700;
 }
 
 .memo-card-foot {
@@ -547,6 +589,239 @@
   font-weight: 700;
 }
 
+.photo-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.photo-field .field-label,
+.photo-field-help,
+.photo-empty,
+.photo-status {
+  margin: 0;
+}
+
+.photo-field .field-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.photo-field-help,
+.photo-empty,
+.photo-status {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.photo-edit-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.photo-edit-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.photo-edit-item img,
+.photo-grid-item img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: var(--radius);
+  background: #eef1f5;
+}
+
+.photo-delete-btn {
+  min-height: 40px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.photo-add-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  border: 1px dashed var(--color-navy);
+  border-radius: var(--radius);
+  background: #f3f6fa;
+  color: var(--color-navy);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.photo-add-btn.is-disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.photo-add-btn input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.photo-grid-item {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.photo-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px 16px;
+  background: rgba(16, 22, 30, 0.88);
+}
+
+.photo-lightbox img {
+  max-width: 100%;
+  max-height: calc(100svh - 120px);
+  object-fit: contain;
+  background: #111;
+}
+
+.photo-lightbox-close {
+  width: min(100%, 200px);
+}
+
+.print-page {
+  width: min(100%, 820px);
+  margin: 0 auto;
+  padding: 16px 16px 32px;
+}
+
+.print-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.print-help {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.print-doc {
+  background: #fff;
+  color: #111;
+  border: 1px solid #c5cdd6;
+  padding: 20px 16px;
+}
+
+.print-doc-header h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.print-doc-property {
+  margin: 4px 0 12px;
+}
+
+.print-doc-meta {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #111;
+}
+
+.print-doc-meta div,
+.print-memo dl > div {
+  display: grid;
+  grid-template-columns: 6.5em 1fr;
+  gap: 8px;
+}
+
+.print-doc-meta dt,
+.print-memo dt {
+  font-weight: 700;
+}
+
+.print-doc-meta dd,
+.print-memo dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.print-empty,
+.print-no-photo {
+  margin: 16px 0 0;
+}
+
+.print-memo {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #c5cdd6;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.print-memo h2 {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+}
+
+.print-memo dl {
+  margin: 0;
+}
+
+.print-memo-body {
+  margin-top: 6px;
+}
+
+.print-photos {
+  margin-top: 10px;
+}
+
+.print-photos p {
+  margin: 0 0 8px;
+  font-weight: 700;
+}
+
+.print-photos div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.print-photos img {
+  width: 120px;
+  height: 90px;
+  object-fit: cover;
+  border: 1px solid #c5cdd6;
+}
+
 @media (min-width: 640px) {
   .app-header-inner,
   .main {
@@ -581,5 +856,66 @@
 
   .detail-panel {
     padding: 20px;
+  }
+
+  .list-actions {
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  .new-memo-btn {
+    flex: 1;
+    width: auto;
+  }
+
+  .pdf-btn {
+    width: auto;
+    min-width: 160px;
+  }
+
+  .photo-edit-list,
+  .photo-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .print-page {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}
+
+@page {
+  size: A4 portrait;
+  margin: 14mm;
+}
+
+@media print {
+  html,
+  body,
+  #root,
+  .app {
+    background: #fff;
+    min-height: 0;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-page {
+    width: auto;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .print-doc {
+    border: 0;
+    padding: 0;
+  }
+
+  .print-photos img {
+    width: 28mm;
+    height: 21mm;
   }
 }

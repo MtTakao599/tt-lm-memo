@@ -13,6 +13,8 @@ const STATUS_CLASS: Record<Memo['status'], string> = {
 }
 
 export function MemoCard({ memo, onOpen }: MemoCardProps) {
+  const firstPhoto = memo.photos[0]
+
   return (
     <button
       type="button"
@@ -39,7 +41,15 @@ export function MemoCard({ memo, onOpen }: MemoCardProps) {
         ) : null}
       </div>
 
-      <p className="memo-card-body">{memo.body}</p>
+      <div className="memo-card-main">
+        <p className="memo-card-body">{memo.body}</p>
+        {firstPhoto ? (
+          <div className="memo-card-photo">
+            <img src={firstPhoto.url} alt="" />
+            <span>写真 {memo.photos.length}枚</span>
+          </div>
+        ) : null}
+      </div>
 
       <p className="memo-card-foot">
         {memo.author}

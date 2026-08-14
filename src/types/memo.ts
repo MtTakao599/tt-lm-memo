@@ -2,6 +2,12 @@ export type Status = '未対応' | '対応中' | '完了'
 
 export type TabId = 'today' | 'handover' | 'open' | 'all'
 
+export type MemoPhoto = {
+  id: string
+  name: string
+  url: string
+}
+
 export type Memo = {
   id: string
   building: string
@@ -14,6 +20,7 @@ export type Memo = {
   author: string
   createdAt: string
   updatedAt: string
+  photos: MemoPhoto[]
 }
 
 export type MemoDraft = Omit<Memo, 'id' | 'author' | 'createdAt' | 'updatedAt'>

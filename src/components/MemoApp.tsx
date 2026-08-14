@@ -3,12 +3,13 @@ import { Header } from './Header'
 import { MemoDetail } from './MemoDetail'
 import { MemoForm } from './MemoForm'
 import { MemoList } from './MemoList'
+import { MemoPrintView } from './MemoPrintView'
 import { MemoTabs } from './MemoTabs'
 import { dummyMemos } from '../data/dummyMemos'
 import type { Memo, MemoDraft, Status, TabId } from '../types/memo'
 import { filterMemos, sortByNewestCreated } from '../utils/filterMemos'
 
-type View = 'list' | 'new' | 'detail' | 'edit'
+type View = 'list' | 'new' | 'detail' | 'edit' | 'print'
 
 type MemoAppProps = {
   userEmail: string
@@ -85,53 +86,73 @@ export function MemoApp({ userEmail, onSignOut, isSigningOut }: MemoAppProps) {
 
   return (
     <div className="app">
-      <Header
-        userEmail={userEmail}
-        onSignOut={onSignOut}
-        isSigningOut={isSigningOut}
-      />
-      <main className="main">
-        {view === 'list' ? (
-          <>
-            <button
-              type="button"
-              className="new-memo-btn"
-              onClick={() => setView('new')}
-            >
-              ＋ 新規メモ
-            </button>
-            <MemoTabs value={tab} onChange={setTab} />
-            <MemoList memos={visibleMemos} onOpen={handleOpen} />
-          </>
-        ) : null}
+      <div className="no-print">
+        <Header
+          userEmail={userEmail}
+          onSignOut={onSignOut}
+          isSigningOut={isSigningOut}
+        />
+      </div>
 
-        {view === 'new' ? (
-          <MemoForm
-            mode="create"
-            onSubmit={handleCreate}
-            onCancel={() => setView('list')}
-          />
-        ) : null}
+      {view === 'print' ? (
+        <MemoPrintView
+          memos={visibleMemos}
+          tab={tab}
+          onBack={handleBackToList}
+        />
+      ) : (
+        <main className="main no-print">
+          {view === 'list' ? (
+            <>
+              <div className="list-actions">
+                <button
+                  type="button"
+                  className="new-memo-btn"
+                  onClick={() => setView('new')}
+                >
+                  ＋ 新規メモ
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary pdf-btn"
+                  onClick={() => setView('print')}
+                >
+                  PDF出力
+                </button>
+              </div>
+              <MemoTabs value={tab} onChange={setTab} />
+              <MemoList memos={visibleMemos} onOpen={handleOpen} />
+            </>
+          ) : null}
 
-        {view === 'detail' && selectedMemo ? (
-          <MemoDetail
-            memo={selectedMemo}
-            onBack={handleBackToList}
-            onEdit={() => setView('edit')}
-            onStatusChange={handleStatusChange}
-            onHandoverChange={handleHandoverChange}
-          />
-        ) : null}
+          {view === 'new' ? (
+            <MemoForm
+              mode="create"
+              onSubmit={handleCreate}
+              onCancel={() => setView('list')}
+            />
+          ) : null}
 
-        {view === 'edit' && selectedMemo ? (
-          <MemoForm
-            mode="edit"
-            memo={selectedMemo}
-            onSubmit={handleSaveEdit}
-            onCancel={() => setView('detail')}
-          />
-        ) : null}
-      </main>
+          {view === 'detail' && selectedMemo ? (
+            <MemoDetail
+              memo={selectedMemo}
+              onBack={handleBackToList}
+              onEdit={() => setView('edit')}
+              onStatusChange={handleStatusChange}
+              onHandoverChange={handleHandoverChange}
+            />
+          ) : null}
+
+          {view === 'edit' && selectedMemo ? (
+            <MemoForm
+              mode="edit"
+              memo={selectedMemo}
+              onSubmit={handleSaveEdit}
+              onCancel={() => setView('detail')}
+            />
+          ) : null}
+        </main>
+      )}
     </div>
   )
 }

@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from 'react'
-import type { Memo, MemoDraft, Status } from '../types/memo'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
+import type { Memo, MemoDraft, MemoPhoto, Status } from '../types/memo'
 import {
   BUILDINGS,
   CATEGORIES,
@@ -8,6 +8,8 @@ import {
   STATUSES,
 } from '../data/formOptions'
 import { formatMemoDate } from '../utils/date'
+import { revokePhotoUrl } from '../utils/photos'
+import { MemoPhotoField } from './MemoPhotoField'
 
 type MemoFormProps = {
   mode: 'create' | 'edit'
@@ -56,6 +58,10 @@ function SelectField({ label, value, options, onChange }: SelectFieldProps) {
 }
 
 export function MemoForm({ mode, memo, onSubmit, onCancel }: MemoFormProps) {
+  const initialPhotosRef = useRef(memo?.photos ?? [])
+  const initialPhotoIdsRef = useRef(
+    new Set(initialPhotosRef.current.map((photo) => photo.id)),
+  )
   const [building, setBuilding] = useState(memo?.building ?? '')
   const [floor, setFloor] = useState(memo?.floor ?? '')
   const [location, setLocation] = useState(memo?.location ?? '')
@@ -63,7 +69,32 @@ export function MemoForm({ mode, memo, onSubmit, onCancel }: MemoFormProps) {
   const [status, setStatus] = useState<Status | ''>(memo?.status ?? '未対応')
   const [body, setBody] = useState(memo?.body ?? '')
   const [handover, setHandover] = useState(memo?.handover ?? false)
+  const [photos, setPhotos] = useState<MemoPhoto[]>(initialPhotosRef.current)
   const [error, setError] = useState('')
+  const submittedRef = useRef(false)
+  const photosRef = useRef(photos)
+  photosRef.current = photos
+
+  useEffect(() => {
+    const initialPhotoIds = initialPhotoIdsRef.current
+    return () => {
+      if (submittedRef.current) {
+        return
+      }
+      for (const photo of photosRef.current) {
+        if (!initialPhotoIds.has(photo.id)) {
+          revokePhotoUrl(photo)
+        }
+      }
+    }
+  }, [])
+
+  function handleRemovePhoto(photo: MemoPhoto) {
+    if (!initialPhotoIdsRef.current.has(photo.id)) {
+      revokePhotoUrl(photo)
+    }
+    setPhotos((current) => current.filter((item) => item.id !== photo.id))
+  }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -80,6 +111,14 @@ export function MemoForm({ mode, memo, onSubmit, onCancel }: MemoFormProps) {
       return
     }
 
+    submittedRef.current = true
+    const keptIds = new Set(photos.map((photo) => photo.id))
+    for (const photo of initialPhotosRef.current) {
+      if (!keptIds.has(photo.id)) {
+        revokePhotoUrl(photo)
+      }
+    }
+
     onSubmit({
       building,
       floor,
@@ -88,6 +127,7 @@ export function MemoForm({ mode, memo, onSubmit, onCancel }: MemoFormProps) {
       status,
       body: body.trim(),
       handover,
+      photos,
     })
   }
 
@@ -161,6 +201,12 @@ export function MemoForm({ mode, memo, onSubmit, onCancel }: MemoFormProps) {
         />
         <span>引き継ぎする</span>
       </label>
+
+      <MemoPhotoField
+        photos={photos}
+        onChange={setPhotos}
+        onRemove={handleRemovePhoto}
+      />
 
       {error ? <p className="form-error">{error}</p> : null}
 
