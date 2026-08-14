@@ -1,0 +1,51 @@
+.page {
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  box-sizing: border-box;
+}
+
+.card {
+  width: min(100%, 480px);
+  text-align: center;
+  padding: 40px 28px;
+  border: 1px solid #e6e8eb;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(1.75rem, 5vw, 2.25rem);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #1f2a37;
+}
+
+.subtitle {
+  margin: 8px 0 0;
+  font-size: clamp(0.9rem, 2.4vw, 1rem);
+  letter-spacing: 0.04em;
+  color: #5b6570;
+}
+
+.property {
+  margin: 32px 0 0;
+  font-size: clamp(1.05rem, 3vw, 1.2rem);
+  font-weight: 500;
+  color: #2c3640;
+}
+
+.status {
+  margin: 12px 0 0;
+  font-size: clamp(0.85rem, 2.2vw, 0.95rem);
+  color: #7a848e;
+}
+
+@media (max-width: 480px) {
+  .card {
+    padding: 32px 20px;
+  }
+}
