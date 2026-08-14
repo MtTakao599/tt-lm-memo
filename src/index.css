@@ -1,14 +1,43 @@
 :root {
+  --color-bg: #f4f6f8;
+  --color-surface: #ffffff;
+  --color-text: #1a2332;
+  --color-text-muted: #5c6775;
+  --color-navy: #1e3a5f;
+  --color-navy-hover: #163050;
+  --color-border: #d7dee8;
+  --color-open: #9b2c2c;
+  --color-open-bg: #fdeeee;
+  --color-progress: #b45309;
+  --color-progress-bg: #fff6e8;
+  --color-done: #276749;
+  --color-done-bg: #eaf6ef;
+  --color-handover: #1d4e89;
+  --color-handover-bg: #e8f1fb;
+  --content-max: 720px;
+  --header-height: 64px;
+  --radius: 8px;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+  background: var(--color-bg);
+}
+
+body {
   font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP",
     Meiryo, system-ui, sans-serif;
   line-height: 1.6;
   font-weight: 400;
-  color: #2c3640;
-  background-color: #fff;
+  color: var(--color-text);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 *,
@@ -17,13 +46,13 @@
   box-sizing: border-box;
 }
 
-html,
-body,
-#root {
-  margin: 0;
-  min-height: 100%;
+button,
+input,
+select,
+textarea {
+  font: inherit;
 }
 
-body {
-  background-color: #fff;
+button {
+  cursor: pointer;
 }
