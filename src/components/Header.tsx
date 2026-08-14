@@ -1,10 +1,12 @@
 import { APP_NAME, PROPERTY_NAME } from '../constants'
 
 type HeaderProps = {
-  userName: string
+  userEmail: string
+  onSignOut: () => void
+  isSigningOut: boolean
 }
 
-export function Header({ userName }: HeaderProps) {
+export function Header({ userEmail, onSignOut, isSigningOut }: HeaderProps) {
   return (
     <header className="app-header">
       <div className="app-header-inner">
@@ -12,7 +14,19 @@ export function Header({ userName }: HeaderProps) {
           <p className="app-header-title">{APP_NAME}</p>
           <p className="app-header-property">{PROPERTY_NAME}</p>
         </div>
-        <p className="app-header-user">{userName}</p>
+        <div className="app-header-account">
+          <p className="app-header-user" title={userEmail}>
+            {userEmail}
+          </p>
+          <button
+            type="button"
+            className="logout-btn"
+            onClick={onSignOut}
+            disabled={isSigningOut}
+          >
+            {isSigningOut ? 'ログアウト中…' : 'ログアウト'}
+          </button>
+        </div>
       </div>
     </header>
   )
