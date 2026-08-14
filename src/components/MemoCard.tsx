@@ -3,6 +3,7 @@ import { formatMemoDate } from '../utils/date'
 
 type MemoCardProps = {
   memo: Memo
+  onOpen: (id: string) => void
 }
 
 const STATUS_CLASS: Record<Memo['status'], string> = {
@@ -11,9 +12,13 @@ const STATUS_CLASS: Record<Memo['status'], string> = {
   完了: 'is-done',
 }
 
-export function MemoCard({ memo }: MemoCardProps) {
+export function MemoCard({ memo, onOpen }: MemoCardProps) {
   return (
-    <article className="memo-card">
+    <button
+      type="button"
+      className="memo-card"
+      onClick={() => onOpen(memo.id)}
+    >
       <div className="memo-card-top">
         <p className="memo-card-place">
           {memo.building}
@@ -41,6 +46,6 @@ export function MemoCard({ memo }: MemoCardProps) {
         <span className="memo-card-sep">・</span>
         {formatMemoDate(memo.createdAt)}
       </p>
-    </article>
+    </button>
   )
 }

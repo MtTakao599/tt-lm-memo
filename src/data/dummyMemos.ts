@@ -7,8 +7,19 @@ function dateAt(hour: number, minute: number, daysAgo = 0): string {
   return date.toISOString()
 }
 
+function dummyMemo(
+  memo: Omit<Memo, 'createdAt' | 'updatedAt'> & {
+    createdAt: string
+  },
+): Memo {
+  return {
+    ...memo,
+    updatedAt: memo.createdAt,
+  }
+}
+
 export const dummyMemos: Memo[] = [
-  {
+  dummyMemo({
     id: 'dummy-1',
     building: 'A棟',
     floor: '3F',
@@ -19,8 +30,8 @@ export const dummyMemos: Memo[] = [
     handover: true,
     author: '小石',
     createdAt: dateAt(9, 20),
-  },
-  {
+  }),
+  dummyMemo({
     id: 'dummy-2',
     building: 'J棟',
     floor: '1F',
@@ -31,8 +42,8 @@ export const dummyMemos: Memo[] = [
     handover: true,
     author: '山田',
     createdAt: dateAt(10, 45),
-  },
-  {
+  }),
+  dummyMemo({
     id: 'dummy-3',
     building: '共用棟',
     floor: '1F',
@@ -43,8 +54,8 @@ export const dummyMemos: Memo[] = [
     handover: false,
     author: '小石',
     createdAt: dateAt(11, 30),
-  },
-  {
+  }),
+  dummyMemo({
     id: 'dummy-4',
     building: 'AE棟',
     floor: '2F',
@@ -55,8 +66,8 @@ export const dummyMemos: Memo[] = [
     handover: true,
     author: '佐藤',
     createdAt: dateAt(8, 10),
-  },
-  {
+  }),
+  dummyMemo({
     id: 'dummy-5',
     building: 'B棟',
     floor: '1F',
@@ -67,5 +78,5 @@ export const dummyMemos: Memo[] = [
     handover: false,
     author: '山田',
     createdAt: dateAt(17, 40, 1),
-  },
+  }),
 ]

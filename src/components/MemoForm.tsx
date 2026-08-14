@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import type { MemoDraft, Status } from '../types/memo'
+import type { Memo, MemoDraft, Status } from '../types/memo'
 import {
   BUILDINGS,
   CATEGORIES,
@@ -7,8 +7,11 @@ import {
   LOCATIONS,
   STATUSES,
 } from '../data/formOptions'
+import { formatMemoDate } from '../utils/date'
 
 type MemoFormProps = {
+  mode: 'create' | 'edit'
+  memo?: Memo
   onSubmit: (values: MemoDraft) => void
   onCancel: () => void
 }
@@ -18,6 +21,16 @@ type SelectFieldProps = {
   value: string
   options: readonly string[]
   onChange: (value: string) => void
+}
+
+function optionsWithCurrent(
+  options: readonly string[],
+  current: string,
+): readonly string[] {
+  if (!current || options.includes(current)) {
+    return options
+  }
+  return [current, ...options]
 }
 
 function SelectField({ label, value, options, onChange }: SelectFieldProps) {
@@ -42,14 +55,14 @@ function SelectField({ label, value, options, onChange }: SelectFieldProps) {
   )
 }
 
-export function MemoForm({ onSubmit, onCancel }: MemoFormProps) {
-  const [building, setBuilding] = useState('')
-  const [floor, setFloor] = useState('')
-  const [location, setLocation] = useState('')
-  const [category, setCategory] = useState('')
-  const [status, setStatus] = useState<Status | ''>('未対応')
-  const [body, setBody] = useState('')
-  const [handover, setHandover] = useState(false)
+export function MemoForm({ mode, memo, onSubmit, onCancel }: MemoFormProps) {
+  const [building, setBuilding] = useState(memo?.building ?? '')
+  const [floor, setFloor] = useState(memo?.floor ?? '')
+  const [location, setLocation] = useState(memo?.location ?? '')
+  const [category, setCategory] = useState(memo?.category ?? '')
+  const [status, setStatus] = useState<Status | ''>(memo?.status ?? '未対応')
+  const [body, setBody] = useState(memo?.body ?? '')
+  const [handover, setHandover] = useState(memo?.handover ?? false)
   const [error, setError] = useState('')
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -80,30 +93,45 @@ export function MemoForm({ onSubmit, onCancel }: MemoFormProps) {
 
   return (
     <form className="memo-form" onSubmit={handleSubmit}>
-      <h1 className="page-heading">新規メモ</h1>
+      <h1 className="page-heading">
+        {mode === 'edit' ? 'メモを編集' : '新規メモ'}
+      </h1>
+
+      {mode === 'edit' && memo ? (
+        <div className="form-readonly">
+          <p>
+            <span>登録者</span>
+            {memo.author}
+          </p>
+          <p>
+            <span>登録日時</span>
+            {formatMemoDate(memo.createdAt)}
+          </p>
+        </div>
+      ) : null}
 
       <SelectField
         label="棟"
         value={building}
-        options={BUILDINGS}
+        options={optionsWithCurrent(BUILDINGS, building)}
         onChange={setBuilding}
       />
       <SelectField
         label="階"
         value={floor}
-        options={FLOORS}
+        options={optionsWithCurrent(FLOORS, floor)}
         onChange={setFloor}
       />
       <SelectField
         label="場所"
         value={location}
-        options={LOCATIONS}
+        options={optionsWithCurrent(LOCATIONS, location)}
         onChange={setLocation}
       />
       <SelectField
         label="区分"
         value={category}
-        options={CATEGORIES}
+        options={optionsWithCurrent(CATEGORIES, category)}
         onChange={setCategory}
       />
       <SelectField
@@ -138,7 +166,7 @@ export function MemoForm({ onSubmit, onCancel }: MemoFormProps) {
 
       <div className="form-actions">
         <button type="submit" className="btn btn-primary">
-          登録
+          {mode === 'edit' ? '保存' : '登録'}
         </button>
         <button type="button" className="btn btn-secondary" onClick={onCancel}>
           キャンセル

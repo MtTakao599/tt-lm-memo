@@ -13,6 +13,7 @@ export type Memo = {
   handover: boolean
   author: string
   createdAt: string
+  updatedAt: string
 }
 
-export type MemoDraft = Omit<Memo, 'id' | 'author' | 'createdAt'>
+export type MemoDraft = Omit<Memo, 'id' | 'author' | 'createdAt' | 'updatedAt'>

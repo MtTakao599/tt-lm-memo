@@ -109,10 +109,25 @@
 }
 
 .memo-card {
+  display: block;
+  width: 100%;
+  text-align: left;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   padding: 14px 14px 12px;
+  color: inherit;
+  cursor: pointer;
+}
+
+.memo-card:hover {
+  border-color: var(--color-navy);
+  box-shadow: 0 1px 6px rgba(30, 58, 95, 0.12);
+}
+
+.memo-card:focus-visible {
+  outline: 2px solid var(--color-navy);
+  outline-offset: 2px;
 }
 
 .memo-card-top {
@@ -295,6 +310,154 @@
   color: var(--color-text);
 }
 
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin: 0 0 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-navy);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.detail-edit-btn {
+  margin-bottom: 16px;
+}
+
+.detail-panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.detail-place {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.detail-section {
+  margin-top: 18px;
+}
+
+.detail-label {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.detail-body {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.detail-meta {
+  margin: 20px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detail-meta div {
+  display: grid;
+  grid-template-columns: 6.5em 1fr;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.detail-meta dt {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.detail-meta dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.quick-control {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.quick-control.is-two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.quick-btn {
+  min-height: 48px;
+  padding: 8px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.quick-btn.is-selected {
+  color: #fff;
+}
+
+.quick-btn.is-open.is-selected {
+  background: var(--color-open);
+  border-color: var(--color-open);
+}
+
+.quick-btn.is-progress.is-selected {
+  background: var(--color-progress);
+  border-color: var(--color-progress);
+}
+
+.quick-btn.is-done.is-selected {
+  background: var(--color-done);
+  border-color: var(--color-done);
+}
+
+.quick-btn.is-handover.is-selected {
+  background: var(--color-handover);
+  border-color: var(--color-handover);
+}
+
+.quick-btn.is-selected:not(.is-open):not(.is-progress):not(.is-done):not(.is-handover) {
+  background: var(--color-navy);
+  border-color: var(--color-navy);
+}
+
+.form-readonly {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  background: #f4f6f8;
+  border-radius: var(--radius);
+}
+
+.form-readonly p {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 6.5em 1fr;
+  gap: 8px;
+}
+
+.form-readonly span {
+  color: var(--color-text-muted);
+  font-weight: 700;
+}
+
 @media (min-width: 640px) {
   .app-header-inner,
   .main {
@@ -317,5 +480,13 @@
   .btn {
     width: auto;
     min-width: 140px;
+  }
+
+  .detail-edit-btn {
+    width: 100%;
+  }
+
+  .detail-panel {
+    padding: 20px;
   }
 }
