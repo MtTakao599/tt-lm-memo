@@ -1,6 +1,8 @@
+import { usePdfExport } from '../hooks/usePdfExport'
 import type { StatusMasterItem } from '../types/master'
 import type { Memo } from '../types/memo'
 import { formatMemoDate } from '../utils/date'
+import { downloadPdf } from '../utils/pdf/downloadPdf'
 import { MemoPhotoViewer } from './MemoPhotoViewer'
 import { MemoStatusControl } from './MemoStatusControl'
 
@@ -9,7 +11,6 @@ type MemoDetailProps = {
   statuses: StatusMasterItem[]
   onBack: () => void
   onEdit: () => void
-  onPrint: () => void
   onStatusChange: (status: string) => void
   onHandoverChange: (handover: boolean) => void
 }
@@ -19,10 +20,11 @@ export function MemoDetail({
   statuses,
   onBack,
   onEdit,
-  onPrint,
   onStatusChange,
   onHandoverChange,
 }: MemoDetailProps) {
+  const pdf = usePdfExport()
+
   return (
     <section className="memo-detail">
       <button type="button" className="back-link" onClick={onBack}>
@@ -33,10 +35,24 @@ export function MemoDetail({
         <button type="button" className="btn btn-primary" onClick={onEdit}>
           編集
         </button>
-        <button type="button" className="btn btn-secondary" onClick={onPrint}>
-          このメモをPDF
+        <button
+          type="button"
+          className="btn btn-secondary"
+          disabled={pdf.busy}
+          onClick={() =>
+            pdf.run(async () => {
+              const { generateMemoPdf } = await import(
+                '../utils/pdf/generateMemoPdf'
+              )
+              const result = await generateMemoPdf(memo)
+              downloadPdf(result.bytes, result.fileName)
+            })
+          }
+        >
+          {pdf.busy ? 'PDFを作成中…' : 'PDF出力'}
         </button>
       </div>
+      {pdf.error ? <p className="form-error">{pdf.error}</p> : null}
 
       <div className="detail-panel">
         <p className="detail-place">

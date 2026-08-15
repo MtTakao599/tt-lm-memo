@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { createInitialMasters } from '../data/initialMasters'
 import { dummyMemos } from '../data/dummyMemos'
+import { usePdfExport } from '../hooks/usePdfExport'
 import { EMPTY_FILTERS, isFiltersActive, type MemoFilters } from '../types/filters'
 import type { MasterSet } from '../types/master'
 import type { Memo, MemoDraft, MemoPhoto, TabId } from '../types/memo'
@@ -15,17 +16,17 @@ import {
   defaultStatusName,
   optionsWithCurrent,
 } from '../utils/masters'
+import { downloadPdf } from '../utils/pdf/downloadPdf'
 import { FreeMemo } from './FreeMemo'
 import { Header } from './Header'
 import { MasterAdmin } from './MasterAdmin'
 import { MemoDetail } from './MemoDetail'
 import { MemoForm } from './MemoForm'
 import { MemoList } from './MemoList'
-import { MemoPrintView } from './MemoPrintView'
 import { MemoSearch } from './MemoSearch'
 import { MemoTabs } from './MemoTabs'
 
-type View = 'list' | 'new' | 'detail' | 'edit' | 'print' | 'print-one' | 'admin'
+type View = 'list' | 'new' | 'detail' | 'edit' | 'admin'
 
 type MemoAppProps = {
   userId: string
@@ -47,6 +48,7 @@ export function MemoApp({
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [filters, setFilters] = useState<MemoFilters>(EMPTY_FILTERS)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const listPdf = usePdfExport()
 
   const tabMemos = useMemo(
     () => filterMemos(memos, tab, masters.statuses),
@@ -175,35 +177,15 @@ export function MemoApp({
 
   return (
     <div className="app">
-      <div className="no-print">
-        <Header
-          userEmail={userEmail}
-          onSignOut={onSignOut}
-          isSigningOut={isSigningOut}
-          onOpenAdmin={view === 'admin' ? undefined : () => setView('admin')}
-        />
-      </div>
-
-      {view === 'print' ? (
-        <MemoPrintView
-          mode="list"
-          memos={visibleMemos}
-          tab={tab}
-          filtered={isFiltersActive(filters)}
-          onBack={handleBackToList}
-        />
-      ) : null}
-
-      {view === 'print-one' && selectedMemo ? (
-        <MemoPrintView
-          mode="single"
-          memos={[selectedMemo]}
-          onBack={() => setView('detail')}
-        />
-      ) : null}
+      <Header
+        userEmail={userEmail}
+        onSignOut={onSignOut}
+        isSigningOut={isSigningOut}
+        onOpenAdmin={view === 'admin' ? undefined : () => setView('admin')}
+      />
 
       {view === 'admin' ? (
-        <main className="main no-print">
+        <main className="main">
           <MasterAdmin
             masters={masters}
             onChange={setMasters}
@@ -212,8 +194,8 @@ export function MemoApp({
         </main>
       ) : null}
 
-      {view !== 'print' && view !== 'print-one' && view !== 'admin' ? (
-        <main className="main no-print">
+      {view !== 'admin' ? (
+        <main className="main">
           {view === 'list' ? (
             <>
               {tab !== 'free' ? (
@@ -225,13 +207,31 @@ export function MemoApp({
                   >
                     ＋ 新規メモ
                   </button>
-                  <button
-                    type="button"
-                    className="btn btn-secondary pdf-btn"
-                    onClick={() => setView('print')}
-                  >
-                    PDF出力
-                  </button>
+                  <div className="pdf-action">
+                    <button
+                      type="button"
+                      className="btn btn-secondary pdf-btn"
+                      disabled={listPdf.busy}
+                      onClick={() =>
+                        listPdf.run(async () => {
+                          const { generateMemoListPdf } = await import(
+                            '../utils/pdf/generateMemoListPdf'
+                          )
+                          const result = await generateMemoListPdf(
+                            visibleMemos,
+                            tab,
+                            isFiltersActive(filters),
+                          )
+                          downloadPdf(result.bytes, result.fileName)
+                        })
+                      }
+                    >
+                      {listPdf.busy ? 'PDFを作成中…' : 'PDF出力'}
+                    </button>
+                    {listPdf.error ? (
+                      <p className="form-error">{listPdf.error}</p>
+                    ) : null}
+                  </div>
                 </div>
               ) : null}
               <MemoTabs value={tab} onChange={setTab} />
@@ -274,7 +274,6 @@ export function MemoApp({
               statuses={masters.statuses}
               onBack={handleBackToList}
               onEdit={() => setView('edit')}
-              onPrint={() => setView('print-one')}
               onStatusChange={handleStatusChange}
               onHandoverChange={handleHandoverChange}
             />
