@@ -1,5 +1,3 @@
-export type Status = '未対応' | '対応中' | '完了'
-
 export type TabId = 'today' | 'handover' | 'open' | 'all'
 
 export type MemoPhoto = {
@@ -14,7 +12,7 @@ export type Memo = {
   floor: string
   location: string
   category: string
-  status: Status
+  status: string
   body: string
   handover: boolean
   author: string

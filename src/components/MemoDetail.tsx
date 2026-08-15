@@ -1,19 +1,22 @@
-import type { Memo, Status } from '../types/memo'
+import type { StatusMasterItem } from '../types/master'
+import type { Memo } from '../types/memo'
 import { formatMemoDate } from '../utils/date'
 import { MemoPhotoViewer } from './MemoPhotoViewer'
 import { MemoStatusControl } from './MemoStatusControl'
 
 type MemoDetailProps = {
   memo: Memo
+  statuses: StatusMasterItem[]
   onBack: () => void
   onEdit: () => void
   onPrint: () => void
-  onStatusChange: (status: Status) => void
+  onStatusChange: (status: string) => void
   onHandoverChange: (handover: boolean) => void
 }
 
 export function MemoDetail({
   memo,
+  statuses,
   onBack,
   onEdit,
   onPrint,
@@ -50,7 +53,11 @@ export function MemoDetail({
 
         <div className="detail-section">
           <p className="detail-label">状態</p>
-          <MemoStatusControl value={memo.status} onChange={onStatusChange} />
+          <MemoStatusControl
+            value={memo.status}
+            statuses={statuses}
+            onChange={onStatusChange}
+          />
         </div>
 
         <div className="detail-section">

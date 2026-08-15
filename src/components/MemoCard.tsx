@@ -1,18 +1,15 @@
+import type { StatusMasterItem } from '../types/master'
 import type { Memo } from '../types/memo'
 import { formatMemoDate } from '../utils/date'
+import { statusToneClass } from '../utils/masters'
 
 type MemoCardProps = {
   memo: Memo
+  statuses: StatusMasterItem[]
   onOpen: (id: string) => void
 }
 
-const STATUS_CLASS: Record<Memo['status'], string> = {
-  未対応: 'is-open',
-  対応中: 'is-progress',
-  完了: 'is-done',
-}
-
-export function MemoCard({ memo, onOpen }: MemoCardProps) {
+export function MemoCard({ memo, statuses, onOpen }: MemoCardProps) {
   const firstPhoto = memo.photos[0]
 
   return (
@@ -29,7 +26,7 @@ export function MemoCard({ memo, onOpen }: MemoCardProps) {
           <span className="memo-card-sep">／</span>
           {memo.location}
         </p>
-        <span className={`status-badge ${STATUS_CLASS[memo.status]}`}>
+        <span className={`status-badge ${statusToneClass(memo.status, statuses)}`}>
           {memo.status}
         </span>
       </div>

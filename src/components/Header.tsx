@@ -4,9 +4,15 @@ type HeaderProps = {
   userEmail: string
   onSignOut: () => void
   isSigningOut: boolean
+  onOpenAdmin?: () => void
 }
 
-export function Header({ userEmail, onSignOut, isSigningOut }: HeaderProps) {
+export function Header({
+  userEmail,
+  onSignOut,
+  isSigningOut,
+  onOpenAdmin,
+}: HeaderProps) {
   return (
     <header className="app-header">
       <div className="app-header-inner">
@@ -18,14 +24,21 @@ export function Header({ userEmail, onSignOut, isSigningOut }: HeaderProps) {
           <p className="app-header-user" title={userEmail}>
             {userEmail}
           </p>
-          <button
-            type="button"
-            className="logout-btn"
-            onClick={onSignOut}
-            disabled={isSigningOut}
-          >
-            {isSigningOut ? 'ログアウト中…' : 'ログアウト'}
-          </button>
+          <div className="app-header-actions">
+            {onOpenAdmin ? (
+              <button type="button" className="header-btn" onClick={onOpenAdmin}>
+                管理
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className="logout-btn"
+              onClick={onSignOut}
+              disabled={isSigningOut}
+            >
+              {isSigningOut ? 'ログアウト中…' : 'ログアウト'}
+            </button>
+          </div>
         </div>
       </div>
     </header>

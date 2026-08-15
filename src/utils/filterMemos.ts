@@ -1,16 +1,20 @@
+import type { StatusMasterItem } from '../types/master'
 import type { Memo, TabId } from '../types/memo'
 import { isSameLocalDay } from './date'
+import { isTreatAsDone } from './masters'
 
-export function filterMemos(memos: Memo[], tab: TabId): Memo[] {
+export function filterMemos(
+  memos: Memo[],
+  tab: TabId,
+  statuses: StatusMasterItem[],
+): Memo[] {
   switch (tab) {
     case 'today':
       return memos.filter((memo) => isSameLocalDay(memo.createdAt))
     case 'handover':
       return memos.filter((memo) => memo.handover)
     case 'open':
-      return memos.filter(
-        (memo) => memo.status === '未対応' || memo.status === '対応中',
-      )
+      return memos.filter((memo) => !isTreatAsDone(memo.status, statuses))
     case 'all':
       return memos
   }

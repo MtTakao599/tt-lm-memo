@@ -1,16 +1,23 @@
 import { useMemo, useState } from 'react'
+import { createInitialMasters } from '../data/initialMasters'
+import { dummyMemos } from '../data/dummyMemos'
+import type { MasterSet } from '../types/master'
+import type { Memo, MemoDraft, MemoPhoto, TabId } from '../types/memo'
+import { deleteMemoById } from '../utils/deleteMemo'
+import { filterMemos, sortByNewestCreated } from '../utils/filterMemos'
+import {
+  defaultStatusName,
+  optionsWithCurrent,
+} from '../utils/masters'
 import { Header } from './Header'
+import { MasterAdmin } from './MasterAdmin'
 import { MemoDetail } from './MemoDetail'
 import { MemoForm } from './MemoForm'
 import { MemoList } from './MemoList'
 import { MemoPrintView } from './MemoPrintView'
 import { MemoTabs } from './MemoTabs'
-import { dummyMemos } from '../data/dummyMemos'
-import type { Memo, MemoDraft, MemoPhoto, Status, TabId } from '../types/memo'
-import { deleteMemoById } from '../utils/deleteMemo'
-import { filterMemos, sortByNewestCreated } from '../utils/filterMemos'
 
-type View = 'list' | 'new' | 'detail' | 'edit' | 'print' | 'print-one'
+type View = 'list' | 'new' | 'detail' | 'edit' | 'print' | 'print-one' | 'admin'
 
 type MemoAppProps = {
   userEmail: string
@@ -22,14 +29,39 @@ export function MemoApp({ userEmail, onSignOut, isSigningOut }: MemoAppProps) {
   const [view, setView] = useState<View>('list')
   const [tab, setTab] = useState<TabId>('today')
   const [memos, setMemos] = useState<Memo[]>(dummyMemos)
+  const [masters, setMasters] = useState<MasterSet>(createInitialMasters)
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   const visibleMemos = useMemo(
-    () => sortByNewestCreated(filterMemos(memos, tab)),
-    [memos, tab],
+    () => sortByNewestCreated(filterMemos(memos, tab, masters.statuses)),
+    [memos, tab, masters.statuses],
   )
 
   const selectedMemo = memos.find((memo) => memo.id === selectedId) ?? null
+
+  const createOptions = useMemo(
+    () => ({
+      buildings: optionsWithCurrent(masters.buildings, ''),
+      floors: optionsWithCurrent(masters.floors, ''),
+      locations: optionsWithCurrent(masters.locations, ''),
+      categories: optionsWithCurrent(masters.categories, ''),
+      statuses: optionsWithCurrent(masters.statuses, ''),
+    }),
+    [masters],
+  )
+
+  const editOptions = useMemo(() => {
+    if (!selectedMemo) {
+      return createOptions
+    }
+    return {
+      buildings: optionsWithCurrent(masters.buildings, selectedMemo.building),
+      floors: optionsWithCurrent(masters.floors, selectedMemo.floor),
+      locations: optionsWithCurrent(masters.locations, selectedMemo.location),
+      categories: optionsWithCurrent(masters.categories, selectedMemo.category),
+      statuses: optionsWithCurrent(masters.statuses, selectedMemo.status),
+    }
+  }, [createOptions, masters, selectedMemo])
 
   function patchMemo(id: string, patch: Partial<Memo>) {
     const updatedAt = new Date().toISOString()
@@ -80,7 +112,7 @@ export function MemoApp({ userEmail, onSignOut, isSigningOut }: MemoAppProps) {
     setView('list')
   }
 
-  function handleStatusChange(status: Status) {
+  function handleStatusChange(status: string) {
     if (!selectedMemo || selectedMemo.status === status) {
       return
     }
@@ -101,6 +133,7 @@ export function MemoApp({ userEmail, onSignOut, isSigningOut }: MemoAppProps) {
           userEmail={userEmail}
           onSignOut={onSignOut}
           isSigningOut={isSigningOut}
+          onOpenAdmin={view === 'admin' ? undefined : () => setView('admin')}
         />
       </div>
 
@@ -121,7 +154,17 @@ export function MemoApp({ userEmail, onSignOut, isSigningOut }: MemoAppProps) {
         />
       ) : null}
 
-      {view !== 'print' && view !== 'print-one' ? (
+      {view === 'admin' ? (
+        <main className="main no-print">
+          <MasterAdmin
+            masters={masters}
+            onChange={setMasters}
+            onBack={handleBackToList}
+          />
+        </main>
+      ) : null}
+
+      {view !== 'print' && view !== 'print-one' && view !== 'admin' ? (
         <main className="main no-print">
           {view === 'list' ? (
             <>
@@ -142,13 +185,19 @@ export function MemoApp({ userEmail, onSignOut, isSigningOut }: MemoAppProps) {
                 </button>
               </div>
               <MemoTabs value={tab} onChange={setTab} />
-              <MemoList memos={visibleMemos} onOpen={handleOpen} />
+              <MemoList
+                memos={visibleMemos}
+                statuses={masters.statuses}
+                onOpen={handleOpen}
+              />
             </>
           ) : null}
 
           {view === 'new' ? (
             <MemoForm
               mode="create"
+              options={createOptions}
+              defaultStatus={defaultStatusName(masters.statuses)}
               onSubmit={handleCreate}
               onCancel={() => setView('list')}
             />
@@ -157,6 +206,7 @@ export function MemoApp({ userEmail, onSignOut, isSigningOut }: MemoAppProps) {
           {view === 'detail' && selectedMemo ? (
             <MemoDetail
               memo={selectedMemo}
+              statuses={masters.statuses}
               onBack={handleBackToList}
               onEdit={() => setView('edit')}
               onPrint={() => setView('print-one')}
@@ -169,6 +219,8 @@ export function MemoApp({ userEmail, onSignOut, isSigningOut }: MemoAppProps) {
             <MemoForm
               mode="edit"
               memo={selectedMemo}
+              options={editOptions}
+              defaultStatus={selectedMemo.status}
               onSubmit={handleSaveEdit}
               onCancel={() => setView('detail')}
               onDelete={handleDelete}

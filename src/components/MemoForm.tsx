@@ -1,20 +1,23 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import type { Memo, MemoDraft, MemoPhoto, Status } from '../types/memo'
-import {
-  BUILDINGS,
-  CATEGORIES,
-  FLOORS,
-  LOCATIONS,
-  STATUSES,
-} from '../data/formOptions'
+import type { Memo, MemoDraft, MemoPhoto } from '../types/memo'
 import { formatMemoDate } from '../utils/date'
 import { revokePhotoUrl } from '../utils/photos'
 import { ConfirmDialog } from './ConfirmDialog'
 import { MemoPhotoField } from './MemoPhotoField'
 
+type FormOptions = {
+  buildings: string[]
+  floors: string[]
+  locations: string[]
+  categories: string[]
+  statuses: string[]
+}
+
 type MemoFormProps = {
   mode: 'create' | 'edit'
   memo?: Memo
+  options: FormOptions
+  defaultStatus: string
   onSubmit: (values: MemoDraft) => void
   onCancel: () => void
   onDelete?: (formPhotos: MemoPhoto[]) => void
@@ -25,16 +28,6 @@ type SelectFieldProps = {
   value: string
   options: readonly string[]
   onChange: (value: string) => void
-}
-
-function optionsWithCurrent(
-  options: readonly string[],
-  current: string,
-): readonly string[] {
-  if (!current || options.includes(current)) {
-    return options
-  }
-  return [current, ...options]
 }
 
 function SelectField({ label, value, options, onChange }: SelectFieldProps) {
@@ -59,7 +52,15 @@ function SelectField({ label, value, options, onChange }: SelectFieldProps) {
   )
 }
 
-export function MemoForm({ mode, memo, onSubmit, onCancel, onDelete }: MemoFormProps) {
+export function MemoForm({
+  mode,
+  memo,
+  options,
+  defaultStatus,
+  onSubmit,
+  onCancel,
+  onDelete,
+}: MemoFormProps) {
   const initialPhotosRef = useRef(memo?.photos ?? [])
   const initialPhotoIdsRef = useRef(
     new Set(initialPhotosRef.current.map((photo) => photo.id)),
@@ -68,7 +69,7 @@ export function MemoForm({ mode, memo, onSubmit, onCancel, onDelete }: MemoFormP
   const [floor, setFloor] = useState(memo?.floor ?? '')
   const [location, setLocation] = useState(memo?.location ?? '')
   const [category, setCategory] = useState(memo?.category ?? '')
-  const [status, setStatus] = useState<Status | ''>(memo?.status ?? '未対応')
+  const [status, setStatus] = useState(memo?.status ?? defaultStatus)
   const [body, setBody] = useState(memo?.body ?? '')
   const [handover, setHandover] = useState(memo?.handover ?? false)
   const [photos, setPhotos] = useState<MemoPhoto[]>(initialPhotosRef.current)
@@ -144,117 +145,117 @@ export function MemoForm({ mode, memo, onSubmit, onCancel, onDelete }: MemoFormP
 
   return (
     <>
-    <form className="memo-form" onSubmit={handleSubmit}>
-      <h1 className="page-heading">
-        {mode === 'edit' ? 'メモを編集' : '新規メモ'}
-      </h1>
+      <form className="memo-form" onSubmit={handleSubmit}>
+        <h1 className="page-heading">
+          {mode === 'edit' ? 'メモを編集' : '新規メモ'}
+        </h1>
 
-      {mode === 'edit' && memo ? (
-        <div className="form-readonly">
-          <p>
-            <span>登録者</span>
-            {memo.author}
-          </p>
-          <p>
-            <span>登録日時</span>
-            {formatMemoDate(memo.createdAt)}
-          </p>
+        {mode === 'edit' && memo ? (
+          <div className="form-readonly">
+            <p>
+              <span>登録者</span>
+              {memo.author}
+            </p>
+            <p>
+              <span>登録日時</span>
+              {formatMemoDate(memo.createdAt)}
+            </p>
+          </div>
+        ) : null}
+
+        <SelectField
+          label="棟"
+          value={building}
+          options={options.buildings}
+          onChange={setBuilding}
+        />
+        <SelectField
+          label="階"
+          value={floor}
+          options={options.floors}
+          onChange={setFloor}
+        />
+        <SelectField
+          label="場所"
+          value={location}
+          options={options.locations}
+          onChange={setLocation}
+        />
+        <SelectField
+          label="区分"
+          value={category}
+          options={options.categories}
+          onChange={setCategory}
+        />
+        <SelectField
+          label="状態"
+          value={status}
+          options={options.statuses}
+          onChange={setStatus}
+        />
+
+        <div className="field">
+          <label htmlFor="field-body">本文</label>
+          <textarea
+            id="field-body"
+            value={body}
+            required
+            rows={5}
+            placeholder="状況や対応内容を入力してください"
+            onChange={(event) => setBody(event.target.value)}
+          />
         </div>
-      ) : null}
 
-      <SelectField
-        label="棟"
-        value={building}
-        options={optionsWithCurrent(BUILDINGS, building)}
-        onChange={setBuilding}
-      />
-      <SelectField
-        label="階"
-        value={floor}
-        options={optionsWithCurrent(FLOORS, floor)}
-        onChange={setFloor}
-      />
-      <SelectField
-        label="場所"
-        value={location}
-        options={optionsWithCurrent(LOCATIONS, location)}
-        onChange={setLocation}
-      />
-      <SelectField
-        label="区分"
-        value={category}
-        options={optionsWithCurrent(CATEGORIES, category)}
-        onChange={setCategory}
-      />
-      <SelectField
-        label="状態"
-        value={status}
-        options={STATUSES}
-        onChange={(value) => setStatus(value as Status | '')}
-      />
+        <label className="handover-check">
+          <input
+            type="checkbox"
+            checked={handover}
+            onChange={(event) => setHandover(event.target.checked)}
+          />
+          <span>引き継ぎする</span>
+        </label>
 
-      <div className="field">
-        <label htmlFor="field-body">本文</label>
-        <textarea
-          id="field-body"
-          value={body}
-          required
-          rows={5}
-          placeholder="状況や対応内容を入力してください"
-          onChange={(event) => setBody(event.target.value)}
+        <MemoPhotoField
+          photos={photos}
+          onChange={setPhotos}
+          onRemove={handleRemovePhoto}
         />
-      </div>
 
-      <label className="handover-check">
-        <input
-          type="checkbox"
-          checked={handover}
-          onChange={(event) => setHandover(event.target.checked)}
-        />
-        <span>引き継ぎする</span>
-      </label>
+        {error ? <p className="form-error">{error}</p> : null}
 
-      <MemoPhotoField
-        photos={photos}
-        onChange={setPhotos}
-        onRemove={handleRemovePhoto}
-      />
-
-      {error ? <p className="form-error">{error}</p> : null}
-
-      <div className="form-actions">
-        <button type="submit" className="btn btn-primary">
-          {mode === 'edit' ? '保存' : '登録'}
-        </button>
-        <button type="button" className="btn btn-secondary" onClick={onCancel}>
-          キャンセル
-        </button>
-      </div>
-
-      {mode === 'edit' && onDelete ? (
-        <div className="danger-zone">
-          <p className="danger-zone-label">危険な操作</p>
-          <button
-            type="button"
-            className="btn btn-danger-quiet"
-            onClick={() => setIsConfirmingDelete(true)}
-          >
-            このメモを削除
+        <div className="form-actions">
+          <button type="submit" className="btn btn-primary">
+            {mode === 'edit' ? '保存' : '登録'}
+          </button>
+          <button type="button" className="btn btn-secondary" onClick={onCancel}>
+            キャンセル
           </button>
         </div>
-      ) : null}
-    </form>
 
-    {isConfirmingDelete ? (
-      <ConfirmDialog
-        title="このメモを削除しますか？"
-        description="削除すると元に戻せません。"
-        cancelLabel="キャンセル"
-        confirmLabel="削除する"
-        onCancel={() => setIsConfirmingDelete(false)}
-        onConfirm={handleConfirmDelete}
-      />
-    ) : null}
+        {mode === 'edit' && onDelete ? (
+          <div className="danger-zone">
+            <p className="danger-zone-label">危険な操作</p>
+            <button
+              type="button"
+              className="btn btn-danger-quiet"
+              onClick={() => setIsConfirmingDelete(true)}
+            >
+              このメモを削除
+            </button>
+          </div>
+        ) : null}
+      </form>
+
+      {isConfirmingDelete ? (
+        <ConfirmDialog
+          title="このメモを削除しますか？"
+          description="削除すると元に戻せません。"
+          cancelLabel="キャンセル"
+          confirmLabel="削除する"
+          onCancel={() => setIsConfirmingDelete(false)}
+          onConfirm={handleConfirmDelete}
+        />
+      ) : null}
     </>
   )
 }
