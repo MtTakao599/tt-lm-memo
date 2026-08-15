@@ -441,6 +441,73 @@
   color: var(--color-text);
 }
 
+.btn-danger {
+  border: 0;
+  background: var(--color-open);
+  color: #fff;
+}
+
+.btn-danger-quiet {
+  border: 1px solid var(--color-open);
+  background: var(--color-surface);
+  color: var(--color-open);
+}
+
+.danger-zone {
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border);
+}
+
+.danger-zone-label {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background: rgba(16, 22, 30, 0.55);
+}
+
+.dialog {
+  width: min(100%, 400px);
+  padding: 24px 20px 20px;
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(16, 22, 30, 0.18);
+}
+
+.dialog h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  line-height: 1.45;
+}
+
+.dialog p {
+  margin: 10px 0 0;
+  color: var(--color-text-muted);
+}
+
+.dialog-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.dialog-actions .btn,
+.danger-zone .btn {
+  width: 100%;
+}
+
 .back-link {
   display: inline-flex;
   align-items: center;
@@ -914,6 +981,11 @@
   .btn {
     width: auto;
     min-width: 140px;
+  }
+
+  .dialog-actions .btn,
+  .danger-zone .btn {
+    width: 100%;
   }
 
   .detail-actions {

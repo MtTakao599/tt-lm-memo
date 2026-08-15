@@ -6,7 +6,8 @@ import { MemoList } from './MemoList'
 import { MemoPrintView } from './MemoPrintView'
 import { MemoTabs } from './MemoTabs'
 import { dummyMemos } from '../data/dummyMemos'
-import type { Memo, MemoDraft, Status, TabId } from '../types/memo'
+import type { Memo, MemoDraft, MemoPhoto, Status, TabId } from '../types/memo'
+import { deleteMemoById } from '../utils/deleteMemo'
 import { filterMemos, sortByNewestCreated } from '../utils/filterMemos'
 
 type View = 'list' | 'new' | 'detail' | 'edit' | 'print' | 'print-one'
@@ -67,6 +68,15 @@ export function MemoApp({ userEmail, onSignOut, isSigningOut }: MemoAppProps) {
   }
 
   function handleBackToList() {
+    setView('list')
+  }
+
+  function handleDelete(formPhotos: MemoPhoto[]) {
+    if (!selectedId) {
+      return
+    }
+    setMemos((current) => deleteMemoById(current, selectedId, formPhotos))
+    setSelectedId(null)
     setView('list')
   }
 
@@ -161,6 +171,7 @@ export function MemoApp({ userEmail, onSignOut, isSigningOut }: MemoAppProps) {
               memo={selectedMemo}
               onSubmit={handleSaveEdit}
               onCancel={() => setView('detail')}
+              onDelete={handleDelete}
             />
           ) : null}
         </main>

@@ -9,6 +9,7 @@ import {
 } from '../data/formOptions'
 import { formatMemoDate } from '../utils/date'
 import { revokePhotoUrl } from '../utils/photos'
+import { ConfirmDialog } from './ConfirmDialog'
 import { MemoPhotoField } from './MemoPhotoField'
 
 type MemoFormProps = {
@@ -16,6 +17,7 @@ type MemoFormProps = {
   memo?: Memo
   onSubmit: (values: MemoDraft) => void
   onCancel: () => void
+  onDelete?: (formPhotos: MemoPhoto[]) => void
 }
 
 type SelectFieldProps = {
@@ -57,7 +59,7 @@ function SelectField({ label, value, options, onChange }: SelectFieldProps) {
   )
 }
 
-export function MemoForm({ mode, memo, onSubmit, onCancel }: MemoFormProps) {
+export function MemoForm({ mode, memo, onSubmit, onCancel, onDelete }: MemoFormProps) {
   const initialPhotosRef = useRef(memo?.photos ?? [])
   const initialPhotoIdsRef = useRef(
     new Set(initialPhotosRef.current.map((photo) => photo.id)),
@@ -71,6 +73,7 @@ export function MemoForm({ mode, memo, onSubmit, onCancel }: MemoFormProps) {
   const [handover, setHandover] = useState(memo?.handover ?? false)
   const [photos, setPhotos] = useState<MemoPhoto[]>(initialPhotosRef.current)
   const [error, setError] = useState('')
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false)
   const submittedRef = useRef(false)
   const photosRef = useRef(photos)
   photosRef.current = photos
@@ -131,7 +134,16 @@ export function MemoForm({ mode, memo, onSubmit, onCancel }: MemoFormProps) {
     })
   }
 
+  function handleConfirmDelete() {
+    if (!onDelete) {
+      return
+    }
+    submittedRef.current = true
+    onDelete(photos)
+  }
+
   return (
+    <>
     <form className="memo-form" onSubmit={handleSubmit}>
       <h1 className="page-heading">
         {mode === 'edit' ? 'メモを編集' : '新規メモ'}
@@ -218,6 +230,31 @@ export function MemoForm({ mode, memo, onSubmit, onCancel }: MemoFormProps) {
           キャンセル
         </button>
       </div>
+
+      {mode === 'edit' && onDelete ? (
+        <div className="danger-zone">
+          <p className="danger-zone-label">危険な操作</p>
+          <button
+            type="button"
+            className="btn btn-danger-quiet"
+            onClick={() => setIsConfirmingDelete(true)}
+          >
+            このメモを削除
+          </button>
+        </div>
+      ) : null}
     </form>
+
+    {isConfirmingDelete ? (
+      <ConfirmDialog
+        title="このメモを削除しますか？"
+        description="削除すると元に戻せません。"
+        cancelLabel="キャンセル"
+        confirmLabel="削除する"
+        onCancel={() => setIsConfirmingDelete(false)}
+        onConfirm={handleConfirmDelete}
+      />
+    ) : null}
+    </>
   )
 }
