@@ -9,7 +9,7 @@ import { dummyMemos } from '../data/dummyMemos'
 import type { Memo, MemoDraft, Status, TabId } from '../types/memo'
 import { filterMemos, sortByNewestCreated } from '../utils/filterMemos'
 
-type View = 'list' | 'new' | 'detail' | 'edit' | 'print'
+type View = 'list' | 'new' | 'detail' | 'edit' | 'print' | 'print-one'
 
 type MemoAppProps = {
   userEmail: string
@@ -96,11 +96,22 @@ export function MemoApp({ userEmail, onSignOut, isSigningOut }: MemoAppProps) {
 
       {view === 'print' ? (
         <MemoPrintView
+          mode="list"
           memos={visibleMemos}
           tab={tab}
           onBack={handleBackToList}
         />
-      ) : (
+      ) : null}
+
+      {view === 'print-one' && selectedMemo ? (
+        <MemoPrintView
+          mode="single"
+          memos={[selectedMemo]}
+          onBack={() => setView('detail')}
+        />
+      ) : null}
+
+      {view !== 'print' && view !== 'print-one' ? (
         <main className="main no-print">
           {view === 'list' ? (
             <>
@@ -138,6 +149,7 @@ export function MemoApp({ userEmail, onSignOut, isSigningOut }: MemoAppProps) {
               memo={selectedMemo}
               onBack={handleBackToList}
               onEdit={() => setView('edit')}
+              onPrint={() => setView('print-one')}
               onStatusChange={handleStatusChange}
               onHandoverChange={handleHandoverChange}
             />
@@ -152,7 +164,7 @@ export function MemoApp({ userEmail, onSignOut, isSigningOut }: MemoAppProps) {
             />
           ) : null}
         </main>
-      )}
+      ) : null}
     </div>
   )
 }

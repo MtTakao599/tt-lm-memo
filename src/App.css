@@ -454,8 +454,16 @@
   font-weight: 700;
 }
 
-.detail-edit-btn {
+.detail-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
   margin-bottom: 16px;
+}
+
+.detail-actions .btn {
+  width: 100%;
+  min-width: 0;
 }
 
 .detail-panel {
@@ -649,6 +657,12 @@
   font-weight: 700;
 }
 
+.photo-add-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .photo-add-btn {
   position: relative;
   display: flex;
@@ -787,17 +801,49 @@
   page-break-inside: avoid;
 }
 
+.print-memo.is-single {
+  margin-top: 8px;
+  padding-top: 0;
+  border-top: 0;
+  break-inside: auto;
+  page-break-inside: auto;
+}
+
 .print-memo h2 {
   margin: 0 0 8px;
   font-size: 1.05rem;
+  break-after: avoid;
+  page-break-after: avoid;
 }
 
-.print-memo dl {
+.print-memo dl,
+.print-memo-fields {
   margin: 0;
+}
+
+.print-memo-fields {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.print-memo.is-single .print-memo-fields {
+  break-inside: auto;
+  page-break-inside: auto;
+}
+
+.print-memo.is-single .print-memo-fields > div:not(.print-memo-body) {
+  break-inside: avoid;
+  page-break-inside: avoid;
 }
 
 .print-memo-body {
   margin-top: 6px;
+}
+
+.print-memo-body dd {
+  font-size: 1.05rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
 }
 
 .print-photos {
@@ -807,19 +853,42 @@
 .print-photos p {
   margin: 0 0 8px;
   font-weight: 700;
+  break-after: avoid;
+  page-break-after: avoid;
 }
 
-.print-photos div {
+.print-photo-list {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
+.print-photo-item {
+  margin: 0;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
 .print-photos img {
+  display: block;
   width: 120px;
   height: 90px;
   object-fit: cover;
   border: 1px solid #c5cdd6;
+}
+
+.print-photos.is-single .print-photo-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.print-photos.is-single img {
+  width: 100%;
+  height: auto;
+  max-height: 220px;
+  object-fit: contain;
+  background: #fff;
 }
 
 @media (min-width: 640px) {
@@ -846,8 +915,13 @@
     min-width: 140px;
   }
 
-  .detail-edit-btn {
-    width: 100%;
+  .detail-actions {
+    display: flex;
+  }
+
+  .detail-actions .btn {
+    width: auto;
+    min-width: 160px;
   }
 
   .login-submit {
@@ -917,5 +991,15 @@
   .print-photos img {
     width: 28mm;
     height: 21mm;
+  }
+
+  .print-photos.is-single img {
+    width: 100%;
+    height: auto;
+    max-height: 65mm;
+  }
+
+  .print-memo-body dd {
+    font-size: 11pt;
   }
 }

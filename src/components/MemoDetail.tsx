@@ -7,6 +7,7 @@ type MemoDetailProps = {
   memo: Memo
   onBack: () => void
   onEdit: () => void
+  onPrint: () => void
   onStatusChange: (status: Status) => void
   onHandoverChange: (handover: boolean) => void
 }
@@ -15,6 +16,7 @@ export function MemoDetail({
   memo,
   onBack,
   onEdit,
+  onPrint,
   onStatusChange,
   onHandoverChange,
 }: MemoDetailProps) {
@@ -24,9 +26,14 @@ export function MemoDetail({
         ← 一覧へ戻る
       </button>
 
-      <button type="button" className="btn btn-primary detail-edit-btn" onClick={onEdit}>
-        編集
-      </button>
+      <div className="detail-actions">
+        <button type="button" className="btn btn-primary" onClick={onEdit}>
+          編集
+        </button>
+        <button type="button" className="btn btn-secondary" onClick={onPrint}>
+          このメモをPDF
+        </button>
+      </div>
 
       <div className="detail-panel">
         <p className="detail-place">
