@@ -5,6 +5,7 @@ export const TABS: { id: TabId; label: string }[] = [
   { id: 'handover', label: '引き継ぎ' },
   { id: 'open', label: '未対応' },
   { id: 'all', label: 'すべて' },
+  { id: 'free', label: '自由メモ' },
 ]
 
 export function getTabLabel(tab: TabId): string {

@@ -31,6 +31,7 @@ function App() {
 
   return (
     <MemoApp
+      userId={user.id}
       userEmail={user.email ?? ''}
       onSignOut={handleSignOut}
       isSigningOut={isSigningOut}

@@ -17,6 +17,8 @@ export function filterMemos(
       return memos.filter((memo) => !isTreatAsDone(memo.status, statuses))
     case 'all':
       return memos
+    case 'free':
+      return []
   }
 }
 

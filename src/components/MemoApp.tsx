@@ -9,6 +9,7 @@ import {
   defaultStatusName,
   optionsWithCurrent,
 } from '../utils/masters'
+import { FreeMemo } from './FreeMemo'
 import { Header } from './Header'
 import { MasterAdmin } from './MasterAdmin'
 import { MemoDetail } from './MemoDetail'
@@ -20,12 +21,18 @@ import { MemoTabs } from './MemoTabs'
 type View = 'list' | 'new' | 'detail' | 'edit' | 'print' | 'print-one' | 'admin'
 
 type MemoAppProps = {
+  userId: string
   userEmail: string
   onSignOut: () => void
   isSigningOut: boolean
 }
 
-export function MemoApp({ userEmail, onSignOut, isSigningOut }: MemoAppProps) {
+export function MemoApp({
+  userId,
+  userEmail,
+  onSignOut,
+  isSigningOut,
+}: MemoAppProps) {
   const [view, setView] = useState<View>('list')
   const [tab, setTab] = useState<TabId>('today')
   const [memos, setMemos] = useState<Memo[]>(dummyMemos)
@@ -168,28 +175,34 @@ export function MemoApp({ userEmail, onSignOut, isSigningOut }: MemoAppProps) {
         <main className="main no-print">
           {view === 'list' ? (
             <>
-              <div className="list-actions">
-                <button
-                  type="button"
-                  className="new-memo-btn"
-                  onClick={() => setView('new')}
-                >
-                  ＋ 新規メモ
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary pdf-btn"
-                  onClick={() => setView('print')}
-                >
-                  PDF出力
-                </button>
-              </div>
+              {tab !== 'free' ? (
+                <div className="list-actions">
+                  <button
+                    type="button"
+                    className="new-memo-btn"
+                    onClick={() => setView('new')}
+                  >
+                    ＋ 新規メモ
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary pdf-btn"
+                    onClick={() => setView('print')}
+                  >
+                    PDF出力
+                  </button>
+                </div>
+              ) : null}
               <MemoTabs value={tab} onChange={setTab} />
-              <MemoList
-                memos={visibleMemos}
-                statuses={masters.statuses}
-                onOpen={handleOpen}
-              />
+              {tab === 'free' ? (
+                <FreeMemo userId={userId} />
+              ) : (
+                <MemoList
+                  memos={visibleMemos}
+                  statuses={masters.statuses}
+                  onOpen={handleOpen}
+                />
+              )}
             </>
           ) : null}
 
