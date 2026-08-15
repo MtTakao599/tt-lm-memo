@@ -10,6 +10,7 @@ type MemoPrintViewProps = {
   mode: PrintMode
   memos: Memo[]
   tab?: TabId
+  filtered?: boolean
   onBack: () => void
 }
 
@@ -111,7 +112,13 @@ function MemoPrintItem({
   )
 }
 
-export function MemoPrintView({ mode, memos, tab, onBack }: MemoPrintViewProps) {
+export function MemoPrintView({
+  mode,
+  memos,
+  tab,
+  filtered = false,
+  onBack,
+}: MemoPrintViewProps) {
   const printedAt = formatDateTime(new Date().toISOString())
   const docRef = useRef<HTMLElement>(null)
   const isSingle = mode === 'single'
@@ -163,7 +170,10 @@ export function MemoPrintView({ mode, memos, tab, onBack }: MemoPrintViewProps) 
             <dl className="print-doc-meta">
               <div>
                 <dt>対象</dt>
-                <dd>{tab ? getTabLabel(tab) : ''}</dd>
+                <dd>
+                  {tab ? getTabLabel(tab) : ''}
+                  {filtered ? '（絞り込みあり）' : ''}
+                </dd>
               </div>
               <div>
                 <dt>出力日時</dt>

@@ -1,10 +1,16 @@
 import { useMemo, useState } from 'react'
 import { createInitialMasters } from '../data/initialMasters'
 import { dummyMemos } from '../data/dummyMemos'
+import { EMPTY_FILTERS, isFiltersActive, type MemoFilters } from '../types/filters'
 import type { MasterSet } from '../types/master'
 import type { Memo, MemoDraft, MemoPhoto, TabId } from '../types/memo'
 import { deleteMemoById } from '../utils/deleteMemo'
-import { filterMemos, sortByNewestCreated } from '../utils/filterMemos'
+import {
+  filterMemos,
+  filterMemosBySearch,
+  mergeFilterChoices,
+  sortByNewestCreated,
+} from '../utils/filterMemos'
 import {
   defaultStatusName,
   optionsWithCurrent,
@@ -16,6 +22,7 @@ import { MemoDetail } from './MemoDetail'
 import { MemoForm } from './MemoForm'
 import { MemoList } from './MemoList'
 import { MemoPrintView } from './MemoPrintView'
+import { MemoSearch } from './MemoSearch'
 import { MemoTabs } from './MemoTabs'
 
 type View = 'list' | 'new' | 'detail' | 'edit' | 'print' | 'print-one' | 'admin'
@@ -38,10 +45,43 @@ export function MemoApp({
   const [memos, setMemos] = useState<Memo[]>(dummyMemos)
   const [masters, setMasters] = useState<MasterSet>(createInitialMasters)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [filters, setFilters] = useState<MemoFilters>(EMPTY_FILTERS)
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
+
+  const tabMemos = useMemo(
+    () => filterMemos(memos, tab, masters.statuses),
+    [memos, tab, masters.statuses],
+  )
 
   const visibleMemos = useMemo(
-    () => sortByNewestCreated(filterMemos(memos, tab, masters.statuses)),
-    [memos, tab, masters.statuses],
+    () => sortByNewestCreated(filterMemosBySearch(tabMemos, filters)),
+    [tabMemos, filters],
+  )
+
+  const filterOptions = useMemo(
+    () => ({
+      buildings: mergeFilterChoices(
+        masters.buildings,
+        memos.map((memo) => memo.building),
+      ),
+      floors: mergeFilterChoices(
+        masters.floors,
+        memos.map((memo) => memo.floor),
+      ),
+      locations: mergeFilterChoices(
+        masters.locations,
+        memos.map((memo) => memo.location),
+      ),
+      categories: mergeFilterChoices(
+        masters.categories,
+        memos.map((memo) => memo.category),
+      ),
+      statuses: mergeFilterChoices(
+        masters.statuses,
+        memos.map((memo) => memo.status),
+      ),
+    }),
+    [masters, memos],
   )
 
   const selectedMemo = memos.find((memo) => memo.id === selectedId) ?? null
@@ -149,6 +189,7 @@ export function MemoApp({
           mode="list"
           memos={visibleMemos}
           tab={tab}
+          filtered={isFiltersActive(filters)}
           onBack={handleBackToList}
         />
       ) : null}
@@ -197,11 +238,22 @@ export function MemoApp({
               {tab === 'free' ? (
                 <FreeMemo userId={userId} />
               ) : (
-                <MemoList
-                  memos={visibleMemos}
-                  statuses={masters.statuses}
-                  onOpen={handleOpen}
-                />
+                <>
+                  <MemoSearch
+                    filters={filters}
+                    options={filterOptions}
+                    resultCount={visibleMemos.length}
+                    tabCount={tabMemos.length}
+                    isOpen={isFilterOpen}
+                    onToggle={() => setIsFilterOpen((open) => !open)}
+                    onChange={setFilters}
+                  />
+                  <MemoList
+                    memos={visibleMemos}
+                    statuses={masters.statuses}
+                    onOpen={handleOpen}
+                  />
+                </>
               )}
             </>
           ) : null}
