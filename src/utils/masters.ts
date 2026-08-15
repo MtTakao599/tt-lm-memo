@@ -4,11 +4,15 @@ export function sortMasters<T extends MasterItem>(items: T[]): T[] {
   return [...items].sort((a, b) => a.sortOrder - b.sortOrder)
 }
 
-export function normalizeSortOrder<T extends MasterItem>(items: T[]): T[] {
-  return sortMasters(items).map((item, index) => ({
+export function assignSortOrder<T extends MasterItem>(items: T[]): T[] {
+  return items.map((item, index) => ({
     ...item,
     sortOrder: index,
   }))
+}
+
+export function normalizeSortOrder<T extends MasterItem>(items: T[]): T[] {
+  return assignSortOrder(sortMasters(items))
 }
 
 export function enabledOptionNames<T extends MasterItem>(items: T[]): string[] {
@@ -115,22 +119,22 @@ export function moveMasterItem<T extends MasterItem>(
   id: string,
   direction: -1 | 1,
 ): T[] {
-  const sorted = normalizeSortOrder(items)
+  const sorted = sortMasters(items)
   const index = sorted.findIndex((item) => item.id === id)
   const nextIndex = index + direction
   if (index < 0 || nextIndex < 0 || nextIndex >= sorted.length) {
-    return sorted
+    return assignSortOrder(sorted)
   }
 
   const next = [...sorted]
   const current = next[index]
   const swap = next[nextIndex]
   if (!current || !swap) {
-    return sorted
+    return assignSortOrder(sorted)
   }
   next[index] = swap
   next[nextIndex] = current
-  return normalizeSortOrder(next)
+  return assignSortOrder(next)
 }
 
 export function setTreatAsDone(
