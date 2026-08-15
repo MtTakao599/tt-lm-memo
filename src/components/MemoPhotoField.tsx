@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { useMobilePhotoUi } from '../hooks/useMobilePhotoUi'
 import type { MemoPhoto } from '../types/memo'
-import { createResizedPhoto, MAX_PHOTOS } from '../utils/photos'
+import { createResizedPhoto } from '../utils/photos'
 
 type MemoPhotoFieldProps = {
   photos: MemoPhoto[]
@@ -27,8 +27,6 @@ export function MemoPhotoField({
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState('')
   const isMobilePhotoUi = useMobilePhotoUi()
-  const remaining = MAX_PHOTOS - photos.length
-  const canAdd = remaining > 0
 
   function resetInputs() {
     if (cameraInputRef.current) {
@@ -40,11 +38,11 @@ export function MemoPhotoField({
   }
 
   async function handleFiles(fileList: FileList | null) {
-    if (!fileList || fileList.length === 0 || remaining <= 0 || isProcessing) {
+    if (!fileList || fileList.length === 0 || isProcessing) {
       return
     }
 
-    const files = Array.from(fileList).filter(isImageFile).slice(0, remaining)
+    const files = Array.from(fileList).filter(isImageFile)
 
     if (files.length === 0) {
       setError('画像ファイルを選択してください。')
@@ -59,7 +57,7 @@ export function MemoPhotoField({
       for (const file of files) {
         added.push(await createResizedPhoto(file))
       }
-      onChange([...photos, ...added].slice(0, MAX_PHOTOS))
+      onChange([...photos, ...added])
     } catch {
       setError('写真の処理に失敗しました。別の画像を試してください。')
     } finally {
@@ -73,7 +71,11 @@ export function MemoPhotoField({
   return (
     <div className="photo-field">
       <p className="field-label">写真</p>
-      <p className="photo-field-help">最大{MAX_PHOTOS}枚まで登録できます</p>
+      <p className="photo-field-help">
+        {photos.length > 0
+          ? `現在 ${photos.length}枚。何枚でも追加できます`
+          : '何枚でも追加できます'}
+      </p>
 
       {photos.length > 0 ? (
         <ul className="photo-edit-list">
@@ -94,7 +96,7 @@ export function MemoPhotoField({
         <p className="photo-empty">写真はまだありません</p>
       )}
 
-      {canAdd && isMobilePhotoUi ? (
+      {isMobilePhotoUi ? (
         <div className="photo-add-actions">
           <label className={addClassName}>
             <input
@@ -119,9 +121,7 @@ export function MemoPhotoField({
             {isProcessing ? '写真を処理しています…' : '写真を選択'}
           </label>
         </div>
-      ) : null}
-
-      {canAdd && !isMobilePhotoUi ? (
+      ) : (
         <label className={addClassName}>
           <input
             ref={pickInputRef}
@@ -133,11 +133,8 @@ export function MemoPhotoField({
           />
           {isProcessing ? '写真を処理しています…' : '写真を追加'}
         </label>
-      ) : null}
+      )}
 
-      {photos.length >= MAX_PHOTOS ? (
-        <p className="photo-status">写真は{MAX_PHOTOS}枚までです</p>
-      ) : null}
       {error ? <p className="form-error">{error}</p> : null}
     </div>
   )

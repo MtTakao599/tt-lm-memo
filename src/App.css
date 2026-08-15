@@ -601,6 +601,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  max-width: 100%;
 }
 
 .photo-field .field-label,
@@ -622,13 +623,21 @@
   color: var(--color-text-muted);
 }
 
-.photo-edit-list {
+.photo-edit-list,
+.photo-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+  width: 100%;
+  max-width: 100%;
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.photo-edit-item,
+.photo-grid-item {
+  min-width: 0;
 }
 
 .photo-edit-item {
@@ -688,12 +697,6 @@
   height: 1px;
   overflow: hidden;
   clip: rect(0 0 0 0);
-}
-
-.photo-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
 }
 
 .photo-grid-item {
@@ -797,8 +800,8 @@
   margin-top: 16px;
   padding-top: 12px;
   border-top: 1px solid #c5cdd6;
-  break-inside: avoid;
-  page-break-inside: avoid;
+  break-inside: auto;
+  page-break-inside: auto;
 }
 
 .print-memo.is-single {
@@ -857,38 +860,36 @@
   page-break-after: avoid;
 }
 
+.print-photos {
+  max-width: 100%;
+}
+
 .print-photo-list {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
+  width: 100%;
+  max-width: 100%;
 }
 
 .print-photo-item {
   margin: 0;
+  min-width: 0;
+  max-width: 100%;
   break-inside: avoid;
   page-break-inside: avoid;
 }
 
-.print-photos img {
-  display: block;
-  width: 120px;
-  height: 90px;
-  object-fit: cover;
-  border: 1px solid #c5cdd6;
-}
-
-.print-photos.is-single .print-photo-list {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
+.print-photos img,
 .print-photos.is-single img {
+  display: block;
   width: 100%;
+  max-width: 100%;
   height: auto;
   max-height: 220px;
   object-fit: contain;
   background: #fff;
+  border: 1px solid #c5cdd6;
 }
 
 @media (min-width: 640px) {
@@ -949,7 +950,7 @@
 
   .photo-edit-list,
   .photo-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   }
 
   .print-page {
@@ -988,15 +989,12 @@
     padding: 0;
   }
 
-  .print-photos img {
-    width: 28mm;
-    height: 21mm;
-  }
-
+  .print-photos img,
   .print-photos.is-single img {
     width: 100%;
+    max-width: 100%;
     height: auto;
-    max-height: 65mm;
+    max-height: 55mm;
   }
 
   .print-memo-body dd {

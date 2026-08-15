@@ -1,6 +1,5 @@
 import type { MemoPhoto } from '../types/memo'
 
-export const MAX_PHOTOS = 3
 const MAX_EDGE = 1600
 const JPEG_QUALITY = 0.8
 
