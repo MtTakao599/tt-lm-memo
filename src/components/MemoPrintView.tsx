@@ -1,8 +1,13 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { APP_NAME, PROPERTY_NAME } from '../constants'
 import type { Memo, TabId } from '../types/memo'
 import { getTabLabel } from '../data/tabs'
 import { formatDateTime, formatMemoDate } from '../utils/date'
+import {
+  buildHandoverPdfTitle,
+  buildSingleMemoPdfTitle,
+} from '../utils/pdfFileName'
+import { printWithDocumentTitle } from '../utils/printDocument'
 
 type PrintMode = 'list' | 'single'
 
@@ -16,9 +21,11 @@ type MemoPrintViewProps = {
 
 function PrintToolbar({
   onBack,
+  onPrint,
   backLabel,
 }: {
   onBack: () => void
+  onPrint: () => void
   backLabel: string
 }) {
   return (
@@ -26,11 +33,7 @@ function PrintToolbar({
       <button type="button" className="back-link" onClick={onBack}>
         {backLabel}
       </button>
-      <button
-        type="button"
-        className="btn btn-primary"
-        onClick={() => window.print()}
-      >
+      <button type="button" className="btn btn-primary" onClick={onPrint}>
         印刷 / PDFとして保存
       </button>
       <p className="print-help">
@@ -112,6 +115,23 @@ function MemoPrintItem({
   )
 }
 
+function waitForImages(root: HTMLElement): Promise<void> {
+  const images = Array.from(root.querySelectorAll('img'))
+  return Promise.all(
+    images.map(
+      (image) =>
+        new Promise<void>((resolve) => {
+          if (image.complete) {
+            resolve()
+            return
+          }
+          image.addEventListener('load', () => resolve(), { once: true })
+          image.addEventListener('error', () => resolve(), { once: true })
+        }),
+    ),
+  ).then(() => undefined)
+}
+
 export function MemoPrintView({
   mode,
   memos,
@@ -121,7 +141,33 @@ export function MemoPrintView({
 }: MemoPrintViewProps) {
   const printedAt = formatDateTime(new Date().toISOString())
   const docRef = useRef<HTMLElement>(null)
+  const originalTitleRef = useRef(document.title)
+  const restorePrintTitleRef = useRef<(() => void) | null>(null)
   const isSingle = mode === 'single'
+
+  const printTitle = useMemo(() => {
+    if (isSingle) {
+      const memo = memos[0]
+      if (!memo) {
+        return originalTitleRef.current
+      }
+      return buildSingleMemoPdfTitle({
+        propertyName: PROPERTY_NAME,
+        building: memo.building,
+        location: memo.location,
+        createdAt: memo.createdAt,
+      })
+    }
+    return buildHandoverPdfTitle()
+  }, [isSingle, memos])
+
+  const runPrint = useCallback(() => {
+    restorePrintTitleRef.current?.()
+    restorePrintTitleRef.current = printWithDocumentTitle(
+      printTitle,
+      originalTitleRef.current,
+    )
+  }, [printTitle])
 
   useEffect(() => {
     const root = docRef.current
@@ -130,35 +176,26 @@ export function MemoPrintView({
     }
 
     let cancelled = false
-    const images = Array.from(root.querySelectorAll('img'))
 
-    Promise.all(
-      images.map(
-        (image) =>
-          new Promise<void>((resolve) => {
-            if (image.complete) {
-              resolve()
-              return
-            }
-            image.addEventListener('load', () => resolve(), { once: true })
-            image.addEventListener('error', () => resolve(), { once: true })
-          }),
-      ),
-    ).then(() => {
+    waitForImages(root).then(() => {
       if (!cancelled) {
-        window.print()
+        runPrint()
       }
     })
 
     return () => {
       cancelled = true
+      restorePrintTitleRef.current?.()
+      restorePrintTitleRef.current = null
+      document.title = originalTitleRef.current
     }
-  }, [memos, mode])
+  }, [memos, mode, printTitle, runPrint])
 
   return (
     <div className="print-page">
       <PrintToolbar
         onBack={onBack}
+        onPrint={runPrint}
         backLabel={isSingle ? '← 詳細へ戻る' : '← 一覧へ戻る'}
       />
 
