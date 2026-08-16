@@ -626,6 +626,10 @@
   font-weight: 700;
 }
 
+.back-link:disabled {
+  opacity: 0.45;
+}
+
 .detail-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1087,6 +1091,32 @@
 
 .settings-import-counts li {
   font-size: 0.95rem;
+}
+
+.migration-progress {
+  margin: 0;
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.migration-result {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+}
+
+.migration-result h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.migration-result .btn {
+  width: 100%;
+  margin-top: 6px;
 }
 
 .master-tabs {

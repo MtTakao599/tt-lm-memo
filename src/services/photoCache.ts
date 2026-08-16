@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase'
 import { AppError, logError } from '../utils/appError'
+import { logMigration, logMigrationError, storageErrorInfo } from '../utils/migrationLog'
 
 const urls = new Map<string, string>()
 const inflight = new Map<string, Promise<string>>()
@@ -31,9 +32,20 @@ async function downloadPhoto(storagePath: string): Promise<string> {
     .from('memo-photos')
     .download(storagePath)
   if (error || !data) {
+    logMigrationError(
+      'storage download failed',
+      { bucket: 'memo-photos', storagePath, ...storageErrorInfo(error) },
+      error,
+    )
     logError('photo download', error)
     throw new AppError('写真を読み込めませんでした')
   }
+  logMigration('storage download ok', {
+    bucket: 'memo-photos',
+    storagePath,
+    blobSize: data.size,
+    blobType: data.type || '(empty)',
+  })
   return URL.createObjectURL(data)
 }
 

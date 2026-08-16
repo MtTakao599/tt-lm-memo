@@ -21,6 +21,7 @@ import {
   downloadSettingsJson,
   parseSharedSettingsJson,
 } from '../utils/settingsShare'
+import { AndroidMigrationPanel } from './AndroidMigrationPanel'
 import { ConfirmDialog } from './ConfirmDialog'
 
 const CATEGORIES: { id: MasterCategory; label: string }[] = [
@@ -32,23 +33,27 @@ const CATEGORIES: { id: MasterCategory; label: string }[] = [
 ]
 
 type MasterAdminProps = {
+  userId: string
   masters: MasterSet
   useBuilding: boolean
   useFloor: boolean
   settingsLoadWarning: boolean
   onChange: (masters: MasterSet) => void
   onImport: (settings: ParsedSharedSettings) => void
+  onMemosImported: () => void
   onReset: () => void
   onBack: () => void
 }
 
 export function MasterAdmin({
+  userId,
   masters,
   useBuilding,
   useFloor,
   settingsLoadWarning,
   onChange,
   onImport,
+  onMemosImported,
   onReset,
   onBack,
 }: MasterAdminProps) {
@@ -64,6 +69,7 @@ export function MasterAdmin({
     null,
   )
   const [resetOpen, setResetOpen] = useState(false)
+  const [migrationBusy, setMigrationBusy] = useState(false)
 
   const items = getItems(masters, category)
 
@@ -99,7 +105,12 @@ export function MasterAdmin({
 
   return (
     <section className="master-admin">
-      <button type="button" className="back-link" onClick={onBack}>
+      <button
+        type="button"
+        className="back-link"
+        disabled={migrationBusy}
+        onClick={onBack}
+      >
         ← LMメモへ戻る
       </button>
       <h1 className="page-heading">マスタ管理</h1>
@@ -283,6 +294,7 @@ export function MasterAdmin({
         <button
           type="button"
           className="btn btn-secondary"
+          disabled={migrationBusy}
           onClick={() => {
             downloadSettingsJson(
               buildSharedSettingsJson(masters, { useBuilding, useFloor }),
@@ -295,6 +307,7 @@ export function MasterAdmin({
         <button
           type="button"
           className="btn btn-secondary"
+          disabled={migrationBusy}
           onClick={() => fileInputRef.current?.click()}
         >
           設定を読み込む
@@ -329,11 +342,19 @@ export function MasterAdmin({
         {shareError ? <p className="form-error">{shareError}</p> : null}
       </section>
 
+      <AndroidMigrationPanel
+        userId={userId}
+        onBusyChange={setMigrationBusy}
+        onImported={onMemosImported}
+        onBackToList={onBack}
+      />
+
       <section className="danger-zone">
         <p className="danger-zone-label">危険な操作</p>
         <button
           type="button"
           className="btn btn-danger-quiet"
+          disabled={migrationBusy}
           onClick={() => setResetOpen(true)}
         >
           初期設定に戻す

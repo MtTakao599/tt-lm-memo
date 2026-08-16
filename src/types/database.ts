@@ -24,6 +24,8 @@ export type MemoRow = {
   updated_by: string
   created_at: string
   updated_at: string
+  legacy_source?: string | null
+  legacy_id?: number | null
 }
 
 export type MemoRowWithRelations = MemoRow & {
@@ -42,6 +44,10 @@ export type MemoInsert = {
   include_in_handover: boolean
   created_by: string
   updated_by: string
+  created_at?: string
+  updated_at?: string
+  legacy_source?: string
+  legacy_id?: number
 }
 
 export type MemoUpdate = {

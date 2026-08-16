@@ -295,6 +295,7 @@ export function MemoApp({
       {view === 'admin' ? (
         <main className="main">
           <MasterAdmin
+            userId={userId}
             masters={masters}
             useBuilding={useBuilding}
             useFloor={useFloor}
@@ -305,6 +306,7 @@ export function MemoApp({
               setUseBuilding(settings.useBuilding)
               setUseFloor(settings.useFloor)
             }}
+            onMemosImported={() => void loadMemos('refresh')}
             onReset={() => {
               setMasters(createInitialMasters())
               setUseBuilding(true)
