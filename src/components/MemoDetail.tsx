@@ -1,4 +1,5 @@
 import { usePdfExport } from '../hooks/usePdfExport'
+import { hydrateMemoPhotos } from '../services/memoService'
 import type { StatusMasterItem } from '../types/master'
 import type { Memo } from '../types/memo'
 import { formatMemoDate } from '../utils/date'
@@ -9,6 +10,8 @@ import { MemoStatusControl } from './MemoStatusControl'
 type MemoDetailProps = {
   memo: Memo
   statuses: StatusMasterItem[]
+  isUpdating?: boolean
+  error?: string | null
   onBack: () => void
   onEdit: () => void
   onStatusChange: (status: string) => void
@@ -18,6 +21,8 @@ type MemoDetailProps = {
 export function MemoDetail({
   memo,
   statuses,
+  isUpdating = false,
+  error,
   onBack,
   onEdit,
   onStatusChange,
@@ -32,7 +37,7 @@ export function MemoDetail({
       </button>
 
       <div className="detail-actions">
-        <button type="button" className="btn btn-primary" onClick={onEdit}>
+        <button type="button" className="btn btn-primary" onClick={onEdit} disabled={isUpdating}>
           編集
         </button>
         <button
@@ -41,10 +46,11 @@ export function MemoDetail({
           disabled={pdf.busy}
           onClick={() =>
             pdf.run(async () => {
+              const [hydrated] = await hydrateMemoPhotos([memo], 'all')
               const { generateMemoPdf } = await import(
                 '../utils/pdf/generateMemoPdf'
               )
-              const result = await generateMemoPdf(memo)
+              const result = await generateMemoPdf(hydrated)
               downloadPdf(result.bytes, result.fileName)
             })
           }
@@ -53,6 +59,7 @@ export function MemoDetail({
         </button>
       </div>
       {pdf.error ? <p className="form-error">{pdf.error}</p> : null}
+      {error ? <p className="form-error">{error}</p> : null}
 
       <div className="detail-panel">
         <p className="detail-place">
@@ -72,6 +79,7 @@ export function MemoDetail({
           <MemoStatusControl
             value={memo.status}
             statuses={statuses}
+            disabled={isUpdating}
             onChange={onStatusChange}
           />
         </div>
@@ -82,6 +90,7 @@ export function MemoDetail({
             <button
               type="button"
               aria-pressed={memo.handover}
+              disabled={isUpdating}
               className={`quick-btn is-handover ${memo.handover ? 'is-selected' : ''}`}
               onClick={() => onHandoverChange(true)}
             >
@@ -90,6 +99,7 @@ export function MemoDetail({
             <button
               type="button"
               aria-pressed={!memo.handover}
+              disabled={isUpdating}
               className={`quick-btn ${!memo.handover ? 'is-selected' : ''}`}
               onClick={() => onHandoverChange(false)}
             >
@@ -109,6 +119,10 @@ export function MemoDetail({
           <div>
             <dt>登録者</dt>
             <dd>{memo.author}</dd>
+          </div>
+          <div>
+            <dt>更新者</dt>
+            <dd>{memo.updatedByName}</dd>
           </div>
           <div>
             <dt>登録日時</dt>

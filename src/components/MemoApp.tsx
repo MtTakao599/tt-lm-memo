@@ -1,11 +1,19 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createInitialMasters } from '../data/initialMasters'
-import { dummyMemos } from '../data/dummyMemos'
 import { usePdfExport } from '../hooks/usePdfExport'
+import {
+  createMemo,
+  deleteMemo,
+  fetchMemos,
+  hydrateMemoPhotos,
+  updateMemo,
+  updateMemoHandover,
+  updateMemoStatus,
+} from '../services/memoService'
 import { EMPTY_FILTERS, isFiltersActive, type MemoFilters } from '../types/filters'
 import type { MasterSet } from '../types/master'
 import type { Memo, MemoDraft, MemoPhoto, TabId } from '../types/memo'
-import { deleteMemoById } from '../utils/deleteMemo'
+import { toUserMessage } from '../utils/appError'
 import {
   filterMemos,
   filterMemosBySearch,
@@ -16,7 +24,9 @@ import {
   defaultStatusName,
   optionsWithCurrent,
 } from '../utils/masters'
+import { mergeLoadedMemo } from '../utils/memoMapper'
 import { downloadPdf } from '../utils/pdf/downloadPdf'
+import { revokePhotoUrl } from '../utils/photos'
 import {
   loadSiteSettings,
   saveSiteSettings,
@@ -31,6 +41,7 @@ import { MemoSearch } from './MemoSearch'
 import { MemoTabs } from './MemoTabs'
 
 type View = 'list' | 'new' | 'detail' | 'edit' | 'admin'
+type LoadState = 'loading' | 'ready' | 'error'
 
 type MemoAppProps = {
   userId: string
@@ -47,7 +58,13 @@ export function MemoApp({
 }: MemoAppProps) {
   const [view, setView] = useState<View>('list')
   const [tab, setTab] = useState<TabId>('today')
-  const [memos, setMemos] = useState<Memo[]>(dummyMemos)
+  const [memos, setMemos] = useState<Memo[]>([])
+  const [loadState, setLoadState] = useState<LoadState>('loading')
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
+  const [detailError, setDetailError] = useState<string | null>(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
   const [siteSettings] = useState(loadSiteSettings)
   const [masters, setMasters] = useState<MasterSet>(siteSettings.masters)
   const [useBuilding, setUseBuilding] = useState(siteSettings.useBuilding)
@@ -56,6 +73,43 @@ export function MemoApp({
   const [filters, setFilters] = useState<MemoFilters>(EMPTY_FILTERS)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const listPdf = usePdfExport()
+
+  const applyMemos = useCallback((next: Memo[]) => {
+    setMemos((current) => {
+      const byId = new Map(current.map((memo) => [memo.id, memo]))
+      return next.map((memo) => mergeLoadedMemo(memo, byId.get(memo.id)))
+    })
+  }, [])
+
+  const loadMemos = useCallback(
+    async (mode: 'initial' | 'refresh' = 'initial') => {
+      if (mode === 'initial') {
+        setLoadState('loading')
+      } else {
+        setIsRefreshing(true)
+      }
+      setLoadError(null)
+      try {
+        const rows = await fetchMemos()
+        applyMemos(rows)
+        setLoadState('ready')
+        const withFirst = await hydrateMemoPhotos(rows, 'first')
+        applyMemos(withFirst)
+      } catch (error) {
+        setLoadError(toUserMessage(error, 'メモを読み込めませんでした'))
+        if (mode === 'initial') {
+          setLoadState('error')
+        }
+      } finally {
+        setIsRefreshing(false)
+      }
+    },
+    [applyMemos],
+  )
+
+  useEffect(() => {
+    void loadMemos('initial')
+  }, [loadMemos])
 
   useEffect(() => {
     try {
@@ -127,68 +181,107 @@ export function MemoApp({
     }
   }, [createOptions, masters, selectedMemo])
 
-  function patchMemo(id: string, patch: Partial<Memo>) {
-    const updatedAt = new Date().toISOString()
-    setMemos((current) =>
-      current.map((memo) =>
-        memo.id === id ? { ...memo, ...patch, updatedAt } : memo,
-      ),
-    )
+  function upsertMemo(next: Memo) {
+    setMemos((current) => {
+      const existing = current.find((memo) => memo.id === next.id)
+      const merged = mergeLoadedMemo(next, existing)
+      if (!existing) {
+        return [merged, ...current]
+      }
+      return current.map((memo) => (memo.id === next.id ? merged : memo))
+    })
   }
 
-  function handleCreate(draft: MemoDraft) {
-    const now = new Date().toISOString()
-    const memo: Memo = {
-      ...draft,
-      id: crypto.randomUUID(),
-      author: userEmail,
-      createdAt: now,
-      updatedAt: now,
-    }
-    setMemos((current) => [memo, ...current])
+  async function handleCreate(draft: MemoDraft) {
+    const result = await createMemo(draft, userId)
+    upsertMemo(result.memo)
+    setNotice(result.photoWarning)
     setTab('today')
     setView('list')
   }
 
-  function handleSaveEdit(draft: MemoDraft) {
-    if (!selectedId) {
+  async function handleSaveEdit(draft: MemoDraft) {
+    if (!selectedMemo) {
       return
     }
-    patchMemo(selectedId, draft)
+    const result = await updateMemo(
+      selectedMemo.id,
+      draft,
+      selectedMemo.photos,
+      userId,
+    )
+    upsertMemo(result.memo)
+    setNotice(result.photoWarning)
     setView('detail')
   }
 
-  function handleOpen(id: string) {
+  async function handleOpen(id: string) {
     setSelectedId(id)
+    setDetailError(null)
     setView('detail')
+    const target = memos.find((memo) => memo.id === id)
+    if (!target) {
+      return
+    }
+    const [hydrated] = await hydrateMemoPhotos([target], 'all')
+    upsertMemo(hydrated)
   }
 
   function handleBackToList() {
     setView('list')
+    setDetailError(null)
   }
 
-  function handleDelete(formPhotos: MemoPhoto[]) {
-    if (!selectedId) {
+  async function handleDelete(formPhotos: MemoPhoto[]) {
+    if (!selectedMemo) {
       return
     }
-    setMemos((current) => deleteMemoById(current, selectedId, formPhotos))
+    await deleteMemo(selectedMemo)
+    for (const photo of formPhotos) {
+      if (!photo.storagePath) {
+        revokePhotoUrl(photo)
+      }
+    }
+    setMemos((current) => current.filter((memo) => memo.id !== selectedMemo.id))
     setSelectedId(null)
     setView('list')
   }
 
-  function handleStatusChange(status: string) {
-    if (!selectedMemo || selectedMemo.status === status) {
+  async function handleStatusChange(status: string) {
+    if (!selectedMemo || selectedMemo.status === status || isUpdating) {
       return
     }
-    patchMemo(selectedMemo.id, { status })
+    setIsUpdating(true)
+    setDetailError(null)
+    try {
+      const updated = await updateMemoStatus(selectedMemo.id, status)
+      upsertMemo(updated)
+    } catch (error) {
+      setDetailError(toUserMessage(error, '状態を更新できませんでした'))
+    } finally {
+      setIsUpdating(false)
+    }
   }
 
-  function handleHandoverChange(handover: boolean) {
-    if (!selectedMemo || selectedMemo.handover === handover) {
+  async function handleHandoverChange(handover: boolean) {
+    if (!selectedMemo || selectedMemo.handover === handover || isUpdating) {
       return
     }
-    patchMemo(selectedMemo.id, { handover })
+    setIsUpdating(true)
+    setDetailError(null)
+    try {
+      const updated = await updateMemoHandover(selectedMemo.id, handover)
+      upsertMemo(updated)
+    } catch (error) {
+      setDetailError(toUserMessage(error, '引き継ぎを更新できませんでした'))
+    } finally {
+      setIsUpdating(false)
+    }
   }
+
+  const filtersActive = isFiltersActive(filters)
+  const emptyMessage =
+    memos.length === 0 ? 'メモはまだありません' : '該当するメモはありません'
 
   return (
     <div className="app">
@@ -235,20 +328,25 @@ export function MemoApp({
                   >
                     ＋ 新規メモ
                   </button>
-                  <div className="pdf-action">
+                  <div className="list-toolbar">
                     <button
                       type="button"
                       className="btn btn-secondary pdf-btn"
-                      disabled={listPdf.busy}
+                      disabled={listPdf.busy || loadState !== 'ready'}
                       onClick={() =>
                         listPdf.run(async () => {
+                          const hydrated = await hydrateMemoPhotos(
+                            visibleMemos,
+                            'all',
+                          )
+                          applyMemos(hydrated)
                           const { generateMemoListPdf } = await import(
                             '../utils/pdf/generateMemoListPdf'
                           )
                           const result = await generateMemoListPdf(
-                            visibleMemos,
+                            hydrated,
                             tab,
-                            isFiltersActive(filters),
+                            filtersActive,
                           )
                           downloadPdf(result.bytes, result.fileName)
                         })
@@ -256,15 +354,37 @@ export function MemoApp({
                     >
                       {listPdf.busy ? 'PDFを作成中…' : 'PDF出力'}
                     </button>
-                    {listPdf.error ? (
-                      <p className="form-error">{listPdf.error}</p>
-                    ) : null}
+                    <button
+                      type="button"
+                      className="btn btn-secondary refresh-btn"
+                      disabled={isRefreshing || loadState === 'loading'}
+                      onClick={() => void loadMemos('refresh')}
+                    >
+                      {isRefreshing ? '更新中…' : '更新'}
+                    </button>
                   </div>
+                  {listPdf.error ? (
+                    <p className="form-error">{listPdf.error}</p>
+                  ) : null}
+                  {notice ? <p className="form-error">{notice}</p> : null}
                 </div>
               ) : null}
               <MemoTabs value={tab} onChange={setTab} />
               {tab === 'free' ? (
                 <FreeMemo userId={userId} />
+              ) : loadState === 'loading' ? (
+                <p className="memo-empty">メモを読み込み中…</p>
+              ) : loadState === 'error' ? (
+                <div className="memo-load-error">
+                  <p className="form-error">{loadError}</p>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => void loadMemos('initial')}
+                  >
+                    再読み込み
+                  </button>
+                </div>
               ) : (
                 <>
                   <MemoSearch
@@ -279,7 +399,8 @@ export function MemoApp({
                   <MemoList
                     memos={visibleMemos}
                     statuses={masters.statuses}
-                    onOpen={handleOpen}
+                    emptyMessage={emptyMessage}
+                    onOpen={(id) => void handleOpen(id)}
                   />
                 </>
               )}
@@ -300,10 +421,12 @@ export function MemoApp({
             <MemoDetail
               memo={selectedMemo}
               statuses={masters.statuses}
+              isUpdating={isUpdating}
+              error={detailError}
               onBack={handleBackToList}
               onEdit={() => setView('edit')}
-              onStatusChange={handleStatusChange}
-              onHandoverChange={handleHandoverChange}
+              onStatusChange={(status) => void handleStatusChange(status)}
+              onHandoverChange={(handover) => void handleHandoverChange(handover)}
             />
           ) : null}
 

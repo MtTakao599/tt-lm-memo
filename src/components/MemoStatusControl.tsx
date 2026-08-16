@@ -4,12 +4,14 @@ import { optionsWithCurrent, statusToneClass } from '../utils/masters'
 type MemoStatusControlProps = {
   value: string
   statuses: StatusMasterItem[]
+  disabled?: boolean
   onChange: (status: string) => void
 }
 
 export function MemoStatusControl({
   value,
   statuses,
+  disabled = false,
   onChange,
 }: MemoStatusControlProps) {
   const names = optionsWithCurrent(statuses, value)
@@ -23,6 +25,7 @@ export function MemoStatusControl({
             key={status}
             type="button"
             aria-pressed={selected}
+            disabled={disabled}
             className={`quick-btn ${statusToneClass(status, statuses)} ${selected ? 'is-selected' : ''}`}
             onClick={() => onChange(status)}
           >

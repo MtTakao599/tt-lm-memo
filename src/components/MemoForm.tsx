@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import type { Memo, MemoDraft, MemoPhoto } from '../types/memo'
+import { toUserMessage } from '../utils/appError'
 import { formatMemoDate } from '../utils/date'
 import { revokePhotoUrl } from '../utils/photos'
 import { ConfirmDialog } from './ConfirmDialog'
@@ -18,9 +19,9 @@ type MemoFormProps = {
   memo?: Memo
   options: FormOptions
   defaultStatus: string
-  onSubmit: (values: MemoDraft) => void
+  onSubmit: (values: MemoDraft) => Promise<void>
   onCancel: () => void
-  onDelete?: (formPhotos: MemoPhoto[]) => void
+  onDelete?: (formPhotos: MemoPhoto[]) => Promise<void>
 }
 
 type SelectFieldProps = {
@@ -74,6 +75,8 @@ export function MemoForm({
   const [handover, setHandover] = useState(memo?.handover ?? false)
   const [photos, setPhotos] = useState<MemoPhoto[]>(initialPhotosRef.current)
   const [error, setError] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false)
   const submittedRef = useRef(false)
   const photosRef = useRef(photos)
@@ -100,7 +103,7 @@ export function MemoForm({
     setPhotos((current) => current.filter((item) => item.id !== photo.id))
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
     if (
@@ -109,38 +112,52 @@ export function MemoForm({
       !location ||
       !category ||
       !status ||
-      !body.trim()
+      !body.trim() ||
+      isSaving ||
+      isDeleting
     ) {
-      setError('未入力の項目があります')
+      if (!building || !floor || !location || !category || !status || !body.trim()) {
+        setError('未入力の項目があります')
+      }
       return
     }
 
-    submittedRef.current = true
-    const keptIds = new Set(photos.map((photo) => photo.id))
-    for (const photo of initialPhotosRef.current) {
-      if (!keptIds.has(photo.id)) {
-        revokePhotoUrl(photo)
-      }
+    setError('')
+    setIsSaving(true)
+    try {
+      await onSubmit({
+        building,
+        floor,
+        location,
+        category,
+        status,
+        body: body.trim(),
+        handover,
+        photos,
+      })
+      submittedRef.current = true
+    } catch (caught) {
+      setError(toUserMessage(caught, 'メモを保存できませんでした'))
+    } finally {
+      setIsSaving(false)
     }
-
-    onSubmit({
-      building,
-      floor,
-      location,
-      category,
-      status,
-      body: body.trim(),
-      handover,
-      photos,
-    })
   }
 
-  function handleConfirmDelete() {
-    if (!onDelete) {
+  async function handleConfirmDelete() {
+    if (!onDelete || isDeleting || isSaving) {
       return
     }
-    submittedRef.current = true
-    onDelete(photos)
+    setIsConfirmingDelete(false)
+    setIsDeleting(true)
+    try {
+      await onDelete(photos)
+      submittedRef.current = true
+    } catch (caught) {
+      setIsConfirmingDelete(false)
+      setError(toUserMessage(caught, 'メモを削除できませんでした'))
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   return (
@@ -224,10 +241,25 @@ export function MemoForm({
         {error ? <p className="form-error">{error}</p> : null}
 
         <div className="form-actions">
-          <button type="submit" className="btn btn-primary">
-            {mode === 'edit' ? '保存' : '登録'}
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={isSaving || isDeleting}
+          >
+            {isSaving
+              ? mode === 'edit'
+                ? '保存中…'
+                : '登録中…'
+              : mode === 'edit'
+                ? '保存'
+                : '登録'}
           </button>
-          <button type="button" className="btn btn-secondary" onClick={onCancel}>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            disabled={isSaving || isDeleting}
+            onClick={onCancel}
+          >
             キャンセル
           </button>
         </div>
@@ -238,9 +270,10 @@ export function MemoForm({
             <button
               type="button"
               className="btn btn-danger-quiet"
+              disabled={isSaving || isDeleting}
               onClick={() => setIsConfirmingDelete(true)}
             >
-              このメモを削除
+              {isDeleting ? '削除中…' : 'このメモを削除'}
             </button>
           </div>
         ) : null}

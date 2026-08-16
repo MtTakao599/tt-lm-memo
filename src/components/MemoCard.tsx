@@ -10,7 +10,8 @@ type MemoCardProps = {
 }
 
 export function MemoCard({ memo, statuses, onOpen }: MemoCardProps) {
-  const firstPhoto = memo.photos[0]
+  const firstPhoto = memo.photos.find((photo) => photo.url) ?? memo.photos[0]
+  const photoCount = memo.photos.length
 
   return (
     <button
@@ -40,10 +41,10 @@ export function MemoCard({ memo, statuses, onOpen }: MemoCardProps) {
 
       <div className="memo-card-main">
         <p className="memo-card-body">{memo.body}</p>
-        {firstPhoto ? (
+        {photoCount > 0 ? (
           <div className="memo-card-photo">
-            <img src={firstPhoto.url} alt="" />
-            <span>写真 {memo.photos.length}枚</span>
+            {firstPhoto?.url ? <img src={firstPhoto.url} alt="" /> : null}
+            <span>写真 {photoCount}枚</span>
           </div>
         ) : null}
       </div>

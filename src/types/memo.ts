@@ -4,6 +4,8 @@ export type MemoPhoto = {
   id: string
   name: string
   url: string
+  storagePath?: string
+  blob?: Blob
 }
 
 export type Memo = {
@@ -16,9 +18,21 @@ export type Memo = {
   body: string
   handover: boolean
   author: string
+  updatedByName: string
+  createdBy: string
+  updatedBy: string
   createdAt: string
   updatedAt: string
   photos: MemoPhoto[]
 }
 
-export type MemoDraft = Omit<Memo, 'id' | 'author' | 'createdAt' | 'updatedAt'>
+export type MemoDraft = Omit<
+  Memo,
+  | 'id'
+  | 'author'
+  | 'updatedByName'
+  | 'createdBy'
+  | 'updatedBy'
+  | 'createdAt'
+  | 'updatedAt'
+>

@@ -3,11 +3,16 @@ import type { MemoPhoto } from '../types/memo'
 const MAX_EDGE = 1600
 const JPEG_QUALITY = 0.8
 
-export function createPhoto(url: string, name: string): MemoPhoto {
+export function createPhoto(
+  url: string,
+  name: string,
+  blob?: Blob,
+): MemoPhoto {
   return {
     id: crypto.randomUUID(),
     name,
     url,
+    blob,
   }
 }
 
@@ -49,7 +54,7 @@ export async function resizeImageFile(file: File): Promise<Blob> {
 export async function createResizedPhoto(file: File): Promise<MemoPhoto> {
   const blob = await resizeImageFile(file)
   const name = toJpegName(file.name)
-  return createPhoto(URL.createObjectURL(blob), name)
+  return createPhoto(URL.createObjectURL(blob), name, blob)
 }
 
 function toJpegName(name: string): string {
