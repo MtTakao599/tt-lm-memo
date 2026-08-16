@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type {
   MasterCategory,
   MasterItem,
   MasterSet,
   StatusMasterItem,
 } from '../types/master'
+import type { ParsedSharedSettings } from '../types/settingsShare'
 import {
   addMasterItem,
   moveMasterItem,
@@ -14,6 +15,13 @@ import {
   setTreatAsDone,
   sortMasters,
 } from '../utils/masters'
+import {
+  SettingsShareError,
+  buildSharedSettingsJson,
+  downloadSettingsJson,
+  parseSharedSettingsJson,
+} from '../utils/settingsShare'
+import { ConfirmDialog } from './ConfirmDialog'
 
 const CATEGORIES: { id: MasterCategory; label: string }[] = [
   { id: 'building', label: '棟' },
@@ -25,17 +33,37 @@ const CATEGORIES: { id: MasterCategory; label: string }[] = [
 
 type MasterAdminProps = {
   masters: MasterSet
+  useBuilding: boolean
+  useFloor: boolean
+  settingsLoadWarning: boolean
   onChange: (masters: MasterSet) => void
+  onImport: (settings: ParsedSharedSettings) => void
+  onReset: () => void
   onBack: () => void
 }
 
-export function MasterAdmin({ masters, onChange, onBack }: MasterAdminProps) {
+export function MasterAdmin({
+  masters,
+  useBuilding,
+  useFloor,
+  settingsLoadWarning,
+  onChange,
+  onImport,
+  onReset,
+  onBack,
+}: MasterAdminProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [category, setCategory] = useState<MasterCategory>('building')
   const [newName, setNewName] = useState('')
   const [newTreatAsDone, setNewTreatAsDone] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState('')
   const [error, setError] = useState('')
+  const [shareError, setShareError] = useState('')
+  const [pendingImport, setPendingImport] = useState<ParsedSharedSettings | null>(
+    null,
+  )
+  const [resetOpen, setResetOpen] = useState(false)
 
   const items = getItems(masters, category)
 
@@ -241,6 +269,118 @@ export function MasterAdmin({ masters, onChange, onBack }: MasterAdminProps) {
           )
         })}
       </ul>
+
+      <section className="settings-share">
+        <h2>設定を共有</h2>
+        <p>
+          棟・階・場所・区分・状態の設定だけをJSONで書き出したり、Android版「管理人メモ」の設定を読み込んだりできます。メモや写真は含まれません。
+        </p>
+        {settingsLoadWarning ? (
+          <p className="form-error">
+            保存されていた設定を読み込めなかったため、初期設定を使用しています
+          </p>
+        ) : null}
+        <button
+          type="button"
+          className="btn btn-secondary"
+          onClick={() => {
+            downloadSettingsJson(
+              buildSharedSettingsJson(masters, { useBuilding, useFloor }),
+            )
+            setShareError('')
+          }}
+        >
+          設定を書き出す
+        </button>
+        <button
+          type="button"
+          className="btn btn-secondary"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          設定を読み込む
+        </button>
+        <input
+          ref={fileInputRef}
+          className="visually-hidden"
+          type="file"
+          accept=".json,application/json"
+          onChange={(event) => {
+            const file = event.target.files?.[0]
+            event.target.value = ''
+            if (!file) {
+              return
+            }
+            void file
+              .text()
+              .then((text) => {
+                setPendingImport(parseSharedSettingsJson(text))
+                setShareError('')
+              })
+              .catch((caught: unknown) => {
+                setPendingImport(null)
+                setShareError(
+                  caught instanceof SettingsShareError
+                    ? caught.message
+                    : '設定ファイルを読み込めませんでした。',
+                )
+              })
+          }}
+        />
+        {shareError ? <p className="form-error">{shareError}</p> : null}
+      </section>
+
+      <section className="danger-zone">
+        <p className="danger-zone-label">危険な操作</p>
+        <button
+          type="button"
+          className="btn btn-danger-quiet"
+          onClick={() => setResetOpen(true)}
+        >
+          初期設定に戻す
+        </button>
+      </section>
+
+      {pendingImport ? (
+        <ConfirmDialog
+          title="設定ファイルを読み込みます"
+          description={`マンション：${pendingImport.mansionName}`}
+          cancelLabel="キャンセル"
+          confirmLabel="読み込む"
+          confirmTone="primary"
+          onCancel={() => setPendingImport(null)}
+          onConfirm={() => {
+            onImport(pendingImport)
+            setPendingImport(null)
+            setShareError('')
+          }}
+        >
+          <ul className="settings-import-counts">
+            <li>棟：{pendingImport.counts.building}項目</li>
+            <li>階：{pendingImport.counts.floor}項目</li>
+            <li>場所：{pendingImport.counts.location}項目</li>
+            <li>区分：{pendingImport.counts.category}項目</li>
+            <li>状態：{pendingImport.counts.status}項目</li>
+          </ul>
+          <p>
+            現在のマスタ設定は読み込んだ内容に置き換わります。メモの内容は変更されません。
+          </p>
+        </ConfirmDialog>
+      ) : null}
+
+      {resetOpen ? (
+        <ConfirmDialog
+          title="マスタ設定を初期状態に戻しますか？"
+          description="メモの内容は削除されません。"
+          cancelLabel="キャンセル"
+          confirmLabel="初期設定に戻す"
+          onCancel={() => setResetOpen(false)}
+          onConfirm={() => {
+            onReset()
+            setResetOpen(false)
+            setShareError('')
+          }}
+        />
+      ) : null}
     </section>
   )
 }

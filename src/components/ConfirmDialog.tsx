@@ -1,10 +1,12 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 
 type ConfirmDialogProps = {
   title: string
   description: string
   cancelLabel: string
   confirmLabel: string
+  confirmTone?: 'danger' | 'primary'
+  children?: ReactNode
   onCancel: () => void
   onConfirm: () => void
 }
@@ -14,6 +16,8 @@ export function ConfirmDialog({
   description,
   cancelLabel,
   confirmLabel,
+  confirmTone = 'danger',
+  children,
   onCancel,
   onConfirm,
 }: ConfirmDialogProps) {
@@ -50,6 +54,7 @@ export function ConfirmDialog({
       >
         <h2 id="confirm-dialog-title">{title}</h2>
         <p id="confirm-dialog-desc">{description}</p>
+        {children}
         <div className="dialog-actions">
           <button
             ref={cancelRef}
@@ -59,7 +64,11 @@ export function ConfirmDialog({
           >
             {cancelLabel}
           </button>
-          <button type="button" className="btn btn-danger" onClick={onConfirm}>
+          <button
+            type="button"
+            className={confirmTone === 'primary' ? 'btn btn-primary' : 'btn btn-danger'}
+            onClick={onConfirm}
+          >
             {confirmLabel}
           </button>
         </div>

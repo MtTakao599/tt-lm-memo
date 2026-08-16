@@ -1037,6 +1037,39 @@
   color: var(--color-text-muted);
 }
 
+.settings-share {
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.settings-share h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.settings-share p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+}
+
+.settings-import-counts {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.settings-import-counts li {
+  font-size: 0.95rem;
+}
+
 .master-tabs {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));

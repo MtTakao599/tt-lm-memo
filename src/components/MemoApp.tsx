@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createInitialMasters } from '../data/initialMasters'
 import { dummyMemos } from '../data/dummyMemos'
 import { usePdfExport } from '../hooks/usePdfExport'
@@ -17,6 +17,10 @@ import {
   optionsWithCurrent,
 } from '../utils/masters'
 import { downloadPdf } from '../utils/pdf/downloadPdf'
+import {
+  loadSiteSettings,
+  saveSiteSettings,
+} from '../utils/siteSettingsStorage'
 import { FreeMemo } from './FreeMemo'
 import { Header } from './Header'
 import { MasterAdmin } from './MasterAdmin'
@@ -44,11 +48,22 @@ export function MemoApp({
   const [view, setView] = useState<View>('list')
   const [tab, setTab] = useState<TabId>('today')
   const [memos, setMemos] = useState<Memo[]>(dummyMemos)
-  const [masters, setMasters] = useState<MasterSet>(createInitialMasters)
+  const [siteSettings] = useState(loadSiteSettings)
+  const [masters, setMasters] = useState<MasterSet>(siteSettings.masters)
+  const [useBuilding, setUseBuilding] = useState(siteSettings.useBuilding)
+  const [useFloor, setUseFloor] = useState(siteSettings.useFloor)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [filters, setFilters] = useState<MemoFilters>(EMPTY_FILTERS)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const listPdf = usePdfExport()
+
+  useEffect(() => {
+    try {
+      saveSiteSettings({ masters, useBuilding, useFloor })
+    } catch {
+      // プライベートモード等で保存できない場合も画面は継続する
+    }
+  }, [masters, useBuilding, useFloor])
 
   const tabMemos = useMemo(
     () => filterMemos(memos, tab, masters.statuses),
@@ -188,7 +203,20 @@ export function MemoApp({
         <main className="main">
           <MasterAdmin
             masters={masters}
+            useBuilding={useBuilding}
+            useFloor={useFloor}
+            settingsLoadWarning={siteSettings.usedFallback}
             onChange={setMasters}
+            onImport={(settings) => {
+              setMasters(settings.masters)
+              setUseBuilding(settings.useBuilding)
+              setUseFloor(settings.useFloor)
+            }}
+            onReset={() => {
+              setMasters(createInitialMasters())
+              setUseBuilding(true)
+              setUseFloor(true)
+            }}
             onBack={handleBackToList}
           />
         </main>
