@@ -69,7 +69,6 @@ export function draftToMemoInsert(
     category: string
     status: string
     body: string
-    handover: boolean
   },
   userId: string,
 ) {
@@ -80,7 +79,7 @@ export function draftToMemoInsert(
     category: draft.category,
     status: draft.status,
     content: draft.body,
-    include_in_handover: draft.handover,
+    include_in_handover: false,
     created_by: userId,
     updated_by: userId,
   }
@@ -93,7 +92,6 @@ export function draftToMemoUpdate(draft: {
   category: string
   status: string
   body: string
-  handover: boolean
 }) {
   return {
     building: draft.building,
@@ -102,7 +100,6 @@ export function draftToMemoUpdate(draft: {
     category: draft.category,
     status: draft.status,
     content: draft.body,
-    include_in_handover: draft.handover,
   }
 }
 

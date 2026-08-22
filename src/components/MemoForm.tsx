@@ -72,7 +72,6 @@ export function MemoForm({
   const [category, setCategory] = useState(memo?.category ?? '')
   const [status, setStatus] = useState(memo?.status ?? defaultStatus)
   const [body, setBody] = useState(memo?.body ?? '')
-  const [handover, setHandover] = useState(memo?.handover ?? false)
   const [photos, setPhotos] = useState<MemoPhoto[]>(initialPhotosRef.current)
   const [error, setError] = useState('')
   const [isSaving, setIsSaving] = useState(false)
@@ -132,7 +131,6 @@ export function MemoForm({
         category,
         status,
         body: body.trim(),
-        handover,
         photos,
       })
       submittedRef.current = true
@@ -222,15 +220,6 @@ export function MemoForm({
             onChange={(event) => setBody(event.target.value)}
           />
         </div>
-
-        <label className="handover-check">
-          <input
-            type="checkbox"
-            checked={handover}
-            onChange={(event) => setHandover(event.target.checked)}
-          />
-          <span>引き継ぎする</span>
-        </label>
 
         <MemoPhotoField
           photos={photos}

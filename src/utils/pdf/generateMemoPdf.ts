@@ -20,7 +20,6 @@ export async function generateMemoPdf(memo: Memo): Promise<{
   builder.field('階', memo.floor)
   builder.field('場所', memo.location)
   builder.field('区分', memo.category)
-  builder.field('引き継ぎ', memo.handover ? 'ON' : 'OFF')
   builder.gap(8)
   builder.heading('本文', 12)
   builder.body(memo.body)

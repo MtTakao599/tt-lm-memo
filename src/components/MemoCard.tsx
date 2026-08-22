@@ -34,9 +34,6 @@ export function MemoCard({ memo, statuses, onOpen }: MemoCardProps) {
 
       <div className="memo-card-meta">
         <span className="category-badge">{memo.category}</span>
-        {memo.handover ? (
-          <span className="handover-badge">引き継ぎON</span>
-        ) : null}
       </div>
 
       <div className="memo-card-main">

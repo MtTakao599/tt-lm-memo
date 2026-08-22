@@ -223,13 +223,6 @@ export async function updateMemoStatus(id: string, status: string): Promise<Memo
   return patchMemo(id, { status })
 }
 
-export async function updateMemoHandover(
-  id: string,
-  handover: boolean,
-): Promise<Memo> {
-  return patchMemo(id, { include_in_handover: handover })
-}
-
 export async function deleteMemo(memo: Memo): Promise<void> {
   const { data: photoRows, error: photoError } = await supabase
     .from('memo_photos')
@@ -288,7 +281,7 @@ function revokeLocalPhotoUrls(photos: MemoPhoto[]) {
 
 async function patchMemo(
   id: string,
-  patch: { status?: string; include_in_handover?: boolean },
+  patch: { status: string },
 ): Promise<Memo> {
   const { data, error } = await supabase
     .from('memos')
@@ -299,11 +292,7 @@ async function patchMemo(
 
   if (error || !data) {
     logError('patchMemo', error)
-    throw new AppError(
-      patch.status
-        ? '状態を更新できませんでした'
-        : '引き継ぎを更新できませんでした',
-    )
+    throw new AppError('状態を更新できませんでした')
   }
 
   const row = data as MemoRowWithRelations

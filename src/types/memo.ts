@@ -1,4 +1,4 @@
-export type TabId = 'today' | 'handover' | 'open' | 'all' | 'free'
+export type TabId = 'today' | 'open' | 'all' | 'free'
 
 export type MemoPhoto = {
   id: string
@@ -35,4 +35,5 @@ export type MemoDraft = Omit<
   | 'updatedBy'
   | 'createdAt'
   | 'updatedAt'
+  | 'handover'
 >

@@ -134,19 +134,17 @@
 }
 
 .memo-tabs {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 6px;
   margin: 16px 0;
   max-width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
 }
 
 .memo-tab {
-  flex: 1 0 auto;
-  min-width: 68px;
+  min-width: 0;
   min-height: 44px;
-  padding: 8px 6px;
+  padding: 8px 4px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   background: var(--color-surface);
@@ -348,8 +346,7 @@
 }
 
 .status-badge,
-.category-badge,
-.handover-badge {
+.category-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -380,11 +377,6 @@
 .status-badge.is-done {
   background: var(--color-done-bg);
   color: var(--color-done);
-}
-
-.handover-badge {
-  background: var(--color-handover-bg);
-  color: var(--color-handover);
 }
 
 .page-heading {
@@ -437,21 +429,6 @@
   padding: 12px;
   resize: vertical;
   line-height: 1.6;
-}
-
-.handover-check {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 48px;
-  font-size: 1rem;
-  font-weight: 700;
-}
-
-.handover-check input {
-  width: 22px;
-  height: 22px;
-  flex-shrink: 0;
 }
 
 .form-error {
@@ -708,10 +685,6 @@
   gap: 8px;
 }
 
-.quick-control.is-two {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
 .quick-btn {
   min-height: 48px;
   padding: 8px 6px;
@@ -747,12 +720,7 @@
   border-color: var(--color-done);
 }
 
-.quick-btn.is-handover.is-selected {
-  background: var(--color-handover);
-  border-color: var(--color-handover);
-}
-
-.quick-btn.is-selected:not(.is-open):not(.is-progress):not(.is-done):not(.is-handover) {
+.quick-btn.is-selected:not(.is-open):not(.is-progress):not(.is-done) {
   background: var(--color-navy);
   border-color: var(--color-navy);
 }

@@ -37,7 +37,6 @@ export async function generateMemoListPdf(
       builder.field('場所', memo.location)
       builder.field('区分', memo.category)
       builder.field('状態', memo.status)
-      builder.field('引き継ぎ', memo.handover ? 'ON' : 'OFF')
       builder.gap(4)
       builder.heading('本文', 12)
       builder.body(memo.body)

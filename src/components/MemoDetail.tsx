@@ -15,7 +15,6 @@ type MemoDetailProps = {
   onBack: () => void
   onEdit: () => void
   onStatusChange: (status: string) => void
-  onHandoverChange: (handover: boolean) => void
 }
 
 export function MemoDetail({
@@ -26,7 +25,6 @@ export function MemoDetail({
   onBack,
   onEdit,
   onStatusChange,
-  onHandoverChange,
 }: MemoDetailProps) {
   const pdf = usePdfExport()
 
@@ -82,30 +80,6 @@ export function MemoDetail({
             disabled={isUpdating}
             onChange={onStatusChange}
           />
-        </div>
-
-        <div className="detail-section">
-          <p className="detail-label">引き継ぎ</p>
-          <div className="quick-control is-two" role="group" aria-label="引き継ぎ">
-            <button
-              type="button"
-              aria-pressed={memo.handover}
-              disabled={isUpdating}
-              className={`quick-btn is-handover ${memo.handover ? 'is-selected' : ''}`}
-              onClick={() => onHandoverChange(true)}
-            >
-              引き継ぎON
-            </button>
-            <button
-              type="button"
-              aria-pressed={!memo.handover}
-              disabled={isUpdating}
-              className={`quick-btn ${!memo.handover ? 'is-selected' : ''}`}
-              onClick={() => onHandoverChange(false)}
-            >
-              引き継ぎOFF
-            </button>
-          </div>
         </div>
 
         <div className="detail-section">

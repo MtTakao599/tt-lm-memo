@@ -1,4 +1,4 @@
-import type { HandoverFilter, MemoFilters } from '../types/filters'
+import type { MemoFilters } from '../types/filters'
 import { EMPTY_FILTERS, isFiltersActive } from '../types/filters'
 
 type FilterOptions = {
@@ -114,19 +114,6 @@ export function MemoSearch({
             choices={options.statuses}
             onChange={(value) => patch('status', value)}
           />
-          <label className="field">
-            <span>引き継ぎ</span>
-            <select
-              value={filters.handover}
-              onChange={(event) =>
-                patch('handover', event.target.value as HandoverFilter)
-              }
-            >
-              <option value="all">すべて</option>
-              <option value="on">ON</option>
-              <option value="off">OFF</option>
-            </select>
-          </label>
         </div>
       ) : null}
 

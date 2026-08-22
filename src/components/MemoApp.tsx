@@ -7,7 +7,6 @@ import {
   fetchMemos,
   hydrateMemoPhotos,
   updateMemo,
-  updateMemoHandover,
   updateMemoStatus,
 } from '../services/memoService'
 import { EMPTY_FILTERS, isFiltersActive, type MemoFilters } from '../types/filters'
@@ -263,22 +262,6 @@ export function MemoApp({
     }
   }
 
-  async function handleHandoverChange(handover: boolean) {
-    if (!selectedMemo || selectedMemo.handover === handover || isUpdating) {
-      return
-    }
-    setIsUpdating(true)
-    setDetailError(null)
-    try {
-      const updated = await updateMemoHandover(selectedMemo.id, handover)
-      upsertMemo(updated)
-    } catch (error) {
-      setDetailError(toUserMessage(error, '引き継ぎを更新できませんでした'))
-    } finally {
-      setIsUpdating(false)
-    }
-  }
-
   const filtersActive = isFiltersActive(filters)
   const emptyMessage =
     memos.length === 0 ? 'メモはまだありません' : '該当するメモはありません'
@@ -428,7 +411,6 @@ export function MemoApp({
               onBack={handleBackToList}
               onEdit={() => setView('edit')}
               onStatusChange={(status) => void handleStatusChange(status)}
-              onHandoverChange={(handover) => void handleHandoverChange(handover)}
             />
           ) : null}
 

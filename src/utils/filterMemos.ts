@@ -12,8 +12,6 @@ export function filterMemos(
   switch (tab) {
     case 'today':
       return memos.filter((memo) => isSameLocalDay(memo.createdAt))
-    case 'handover':
-      return memos.filter((memo) => memo.handover)
     case 'open':
       return memos.filter((memo) => !isTreatAsDone(memo.status, statuses))
     case 'all':
@@ -53,12 +51,6 @@ function matchesDetails(memo: Memo, filters: MemoFilters): boolean {
     return false
   }
   if (filters.status && memo.status !== filters.status) {
-    return false
-  }
-  if (filters.handover === 'on' && !memo.handover) {
-    return false
-  }
-  if (filters.handover === 'off' && memo.handover) {
     return false
   }
   return true
