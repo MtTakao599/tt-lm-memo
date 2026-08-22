@@ -2,7 +2,7 @@ import { APP_NAME, PROPERTY_NAME } from '../../constants'
 import type { Memo, TabId } from '../../types/memo'
 import { getTabLabel } from '../../data/tabs'
 import { formatDateTime } from '../date'
-import { buildHandoverPdfTitle } from '../pdfFileName'
+import { buildMemoListPdfFileName } from '../pdfFileName'
 import { createPdfBuilder } from './pdfLayout'
 
 export async function generateMemoListPdf(
@@ -57,6 +57,6 @@ export async function generateMemoListPdf(
   const bytes = await builder.doc.save()
   return {
     bytes,
-    fileName: `${buildHandoverPdfTitle()}.pdf`,
+    fileName: `${buildMemoListPdfFileName()}.pdf`,
   }
 }

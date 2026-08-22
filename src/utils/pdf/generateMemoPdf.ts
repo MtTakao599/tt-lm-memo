@@ -1,7 +1,7 @@
-import { PROPERTY_NAME } from '../../constants'
+import { APP_NAME, PROPERTY_NAME } from '../../constants'
 import type { Memo } from '../../types/memo'
 import { formatDateTime } from '../date'
-import { buildSingleMemoPdfTitle } from '../pdfFileName'
+import { buildSingleMemoPdfFileName } from '../pdfFileName'
 import { createPdfBuilder } from './pdfLayout'
 
 export async function generateMemoPdf(memo: Memo): Promise<{
@@ -10,7 +10,7 @@ export async function generateMemoPdf(memo: Memo): Promise<{
 }> {
   const builder = await createPdfBuilder()
 
-  builder.title('メモ報告')
+  builder.title(APP_NAME)
   builder.gap(2)
   builder.title(PROPERTY_NAME, 18)
   builder.gap(10)
@@ -36,7 +36,7 @@ export async function generateMemoPdf(memo: Memo): Promise<{
   const bytes = await builder.doc.save()
   return {
     bytes,
-    fileName: `${buildSingleMemoPdfTitle({
+    fileName: `${buildSingleMemoPdfFileName({
       propertyName: PROPERTY_NAME,
       building: memo.building,
       location: memo.location,

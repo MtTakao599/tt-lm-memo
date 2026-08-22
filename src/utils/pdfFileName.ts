@@ -35,14 +35,14 @@ function joinFileNameParts(parts: Array<string | null | undefined>): string {
     .replace(/_+/g, '_')
 }
 
-export function buildSingleMemoPdfTitle(input: {
+export function buildSingleMemoPdfFileName(input: {
   propertyName: string
   building: string
   location: string
   createdAt: Date | string
 }): string {
   return joinFileNameParts([
-    '管理人メモ',
+    'LMメモ',
     input.propertyName,
     input.building,
     input.location,
@@ -50,6 +50,6 @@ export function buildSingleMemoPdfTitle(input: {
   ])
 }
 
-export function buildHandoverPdfTitle(now: Date | string = new Date()): string {
-  return `handover_${formatPdfFileDate(now)}`
+export function buildMemoListPdfFileName(now: Date | string = new Date()): string {
+  return joinFileNameParts(['LMメモ', '一覧', formatPdfFileDate(now)])
 }
