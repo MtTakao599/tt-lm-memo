@@ -1,41 +1,28 @@
-import { createInitialMasters } from '../data/initialMasters'
 import type { MasterItem, MasterSet, StatusMasterItem } from '../types/master'
 import {
   SETTINGS_SCHEMA_VERSION,
   type StoredSiteSettings,
 } from '../types/settingsShare'
+import { parseSharedSettingsJson } from './settingsShare'
 
 export const SITE_SETTINGS_STORAGE_KEY = 'lm-settings:tokyo-terrace'
 
-export type LoadedSiteSettings = {
+export type LocalSiteSettings = {
   masters: MasterSet
   useBuilding: boolean
   useFloor: boolean
-  usedFallback: boolean
 }
 
-export function loadSiteSettings(): LoadedSiteSettings {
-  const fallback: LoadedSiteSettings = {
-    masters: createInitialMasters(),
-    useBuilding: true,
-    useFloor: true,
-    usedFallback: true,
-  }
-
+export function readLocalSiteSettings(): LocalSiteSettings | null {
   try {
     const raw = localStorage.getItem(SITE_SETTINGS_STORAGE_KEY)
     if (!raw) {
-      return { ...fallback, usedFallback: false }
+      return null
     }
-
     const parsed: unknown = JSON.parse(raw)
-    const settings = parseStoredSettings(parsed)
-    if (!settings) {
-      return fallback
-    }
-    return { ...settings, usedFallback: false }
+    return parseStoredSettings(parsed)
   } catch {
-    return fallback
+    return null
   }
 }
 
@@ -56,9 +43,13 @@ export function saveSiteSettings(settings: {
 
 function parseStoredSettings(
   value: unknown,
-): Omit<LoadedSiteSettings, 'usedFallback'> | null {
+): LocalSiteSettings | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return null
+  }
+  const androidCompatible = parseAndroidCompatibleSettings(value)
+  if (androidCompatible) {
+    return androidCompatible
   }
   const record = value as Partial<StoredSiteSettings>
   if (record.schemaVersion !== SETTINGS_SCHEMA_VERSION) {
@@ -77,6 +68,21 @@ function parseStoredSettings(
     masters: record.masters,
     useBuilding: record.useBuilding,
     useFloor: record.useFloor,
+  }
+}
+
+function parseAndroidCompatibleSettings(
+  value: unknown,
+): LocalSiteSettings | null {
+  try {
+    const parsed = parseSharedSettingsJson(JSON.stringify(value))
+    return {
+      masters: parsed.masters,
+      useBuilding: parsed.useBuilding,
+      useFloor: parsed.useFloor,
+    }
+  } catch {
+    return null
   }
 }
 

@@ -50,6 +50,27 @@ export type MemoInsert = {
   legacy_id?: number
 }
 
+export type MasterDbType = 'building' | 'floor' | 'place' | 'category' | 'status'
+
+export type MemoMasterItemRow = {
+  id: string
+  mansion_key: string
+  type: MasterDbType
+  name: string
+  sort_order: number
+  enabled: boolean
+  treat_as_done: boolean
+  created_at: string
+  updated_at: string
+}
+
+export type MemoSiteSettingsRow = {
+  mansion_key: string
+  use_building: boolean
+  use_floor: boolean
+  updated_at: string
+}
+
 export type MemoUpdate = {
   building?: string
   floor?: string

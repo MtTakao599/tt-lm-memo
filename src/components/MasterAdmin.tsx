@@ -1,4 +1,11 @@
 import { useRef, useState } from 'react'
+import { createInitialMasters } from '../data/initialMasters'
+import {
+  createMasterItem,
+  replaceMasters,
+  updateMasterItem,
+  updateMasterSortOrders,
+} from '../services/masterService'
 import type {
   MasterCategory,
   MasterItem,
@@ -6,13 +13,11 @@ import type {
   StatusMasterItem,
 } from '../types/master'
 import type { ParsedSharedSettings } from '../types/settingsShare'
+import { toUserMessage } from '../utils/appError'
 import {
   addMasterItem,
   moveMasterItem,
-  normalizeSortOrder,
   renameMasterItem,
-  setMasterEnabled,
-  setTreatAsDone,
   sortMasters,
 } from '../utils/masters'
 import {
@@ -21,6 +26,7 @@ import {
   downloadSettingsJson,
   parseSharedSettingsJson,
 } from '../utils/settingsShare'
+import { readLocalSiteSettings } from '../utils/siteSettingsStorage'
 import { AndroidMigrationPanel } from './AndroidMigrationPanel'
 import { ConfirmDialog } from './ConfirmDialog'
 
@@ -37,11 +43,15 @@ type MasterAdminProps = {
   masters: MasterSet
   useBuilding: boolean
   useFloor: boolean
-  settingsLoadWarning: boolean
-  onChange: (masters: MasterSet) => void
-  onImport: (settings: ParsedSharedSettings) => void
+  canSeed: boolean
+  syncLabel: string
+  onReload: () => Promise<void>
+  onApply: (settings: {
+    masters: MasterSet
+    useBuilding: boolean
+    useFloor: boolean
+  }) => void
   onMemosImported: () => void
-  onReset: () => void
   onBack: () => void
 }
 
@@ -50,11 +60,11 @@ export function MasterAdmin({
   masters,
   useBuilding,
   useFloor,
-  settingsLoadWarning,
-  onChange,
-  onImport,
+  canSeed,
+  syncLabel,
+  onReload,
+  onApply,
   onMemosImported,
-  onReset,
   onBack,
 }: MasterAdminProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -70,11 +80,25 @@ export function MasterAdmin({
   )
   const [resetOpen, setResetOpen] = useState(false)
   const [migrationBusy, setMigrationBusy] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
 
   const items = getItems(masters, category)
+  const busy = migrationBusy || isSaving
 
-  function updateItems(next: MasterItem[] | StatusMasterItem[]) {
-    onChange(setItems(masters, category, next))
+  async function runSave(action: () => Promise<void>, fallback: string) {
+    if (isSaving) {
+      return
+    }
+    setIsSaving(true)
+    setError('')
+    try {
+      await action()
+      await onReload()
+    } catch (caught) {
+      setError(toUserMessage(caught, fallback))
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   function handleAdd() {
@@ -85,10 +109,24 @@ export function MasterAdmin({
       setError(result.error)
       return
     }
-    updateItems(result.items)
-    setNewName('')
-    setNewTreatAsDone(false)
-    setError('')
+    const created = result.items[result.items.length - 1]
+    if (!created) {
+      return
+    }
+    void runSave(async () => {
+      await createMasterItem({
+        category,
+        name: created.name,
+        sortOrder: created.sortOrder,
+        enabled: created.enabled,
+        treatAsDone:
+          'treatAsDone' in created
+            ? Boolean((created as StatusMasterItem).treatAsDone)
+            : false,
+      })
+      setNewName('')
+      setNewTreatAsDone(false)
+    }, 'マスタを保存できませんでした')
   }
 
   function handleRename(id: string) {
@@ -97,10 +135,75 @@ export function MasterAdmin({
       setError(result.error)
       return
     }
-    updateItems(result.items)
-    setEditingId(null)
-    setEditingName('')
+    void runSave(async () => {
+      await updateMasterItem(id, { name: editingName.trim() })
+      setEditingId(null)
+      setEditingName('')
+    }, 'マスタを保存できませんでした')
+  }
+
+  async function handleConfirmImport() {
+    if (!pendingImport || isSaving) {
+      return
+    }
+    setIsSaving(true)
+    setShareError('')
+    try {
+      const next = await replaceMasters(pendingImport.masters, {
+        useBuilding: pendingImport.useBuilding,
+        useFloor: pendingImport.useFloor,
+      })
+      onApply(next)
+      setPendingImport(null)
+    } catch (caught) {
+      setShareError(toUserMessage(caught, '設定を読み込めませんでした'))
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  async function handleReset() {
+    if (isSaving) {
+      return
+    }
+    setIsSaving(true)
+    setShareError('')
+    try {
+      const next = await replaceMasters(createInitialMasters(), {
+        useBuilding: true,
+        useFloor: true,
+      })
+      onApply(next)
+      setResetOpen(false)
+    } catch (caught) {
+      setShareError(toUserMessage(caught, '初期設定に戻せませんでした'))
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  async function handleSeed() {
+    if (isSaving) {
+      return
+    }
+    setIsSaving(true)
     setError('')
+    try {
+      const local = readLocalSiteSettings()
+      if (!local) {
+        setError('この端末に登録できる設定がありません')
+        return
+      }
+      const next = await replaceMasters(local.masters, {
+        useBuilding: local.useBuilding,
+        useFloor: local.useFloor,
+      })
+      onApply(next)
+    } catch (caught) {
+      setError(toUserMessage(caught, 'マスタを登録できませんでした'))
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -108,13 +211,33 @@ export function MasterAdmin({
       <button
         type="button"
         className="back-link"
-        disabled={migrationBusy}
+        disabled={busy}
         onClick={onBack}
       >
         ← LMメモへ戻る
       </button>
       <h1 className="page-heading">マスタ管理</h1>
       <p className="master-lead">東京テラスの選択肢を管理します</p>
+      <p className="master-sync-status">{syncLabel}</p>
+      {isSaving ? <p className="master-lead">保存中…</p> : null}
+
+      {canSeed ? (
+        <section className="settings-share">
+          <h2>この端末の設定をSupabaseへ登録</h2>
+          <p>
+            共通保存にマスタがまだありません。この端末の現在の設定を登録すると、PCとスマホで同じ選択肢になります。自動では登録しません。
+          </p>
+          <button
+            type="button"
+            className="btn btn-primary"
+            disabled={busy}
+            onClick={() => void handleSeed()}
+          >
+            この端末の設定をSupabaseへ登録
+          </button>
+          {error ? <p className="form-error">{error}</p> : null}
+        </section>
+      ) : null}
 
       <div className="master-tabs" role="tablist" aria-label="マスタの種類">
         {CATEGORIES.map((item) => (
@@ -124,6 +247,7 @@ export function MasterAdmin({
             role="tab"
             aria-selected={category === item.id}
             className={category === item.id ? 'memo-tab is-active' : 'memo-tab'}
+            disabled={busy}
             onClick={() => {
               setCategory(item.id)
               setEditingId(null)
@@ -144,6 +268,7 @@ export function MasterAdmin({
             type="text"
             value={newName}
             placeholder="新しい項目名"
+            disabled={busy}
             onChange={(event) => setNewName(event.target.value)}
           />
         </label>
@@ -152,12 +277,18 @@ export function MasterAdmin({
             <input
               type="checkbox"
               checked={newTreatAsDone}
+              disabled={busy}
               onChange={(event) => setNewTreatAsDone(event.target.checked)}
             />
             <span>完了扱い（未対応に表示しない）</span>
           </label>
         ) : null}
-        <button type="button" className="btn btn-primary" onClick={handleAdd}>
+        <button
+          type="button"
+          className="btn btn-primary"
+          disabled={busy}
+          onClick={handleAdd}
+        >
           ＋ 項目追加
         </button>
         {error ? <p className="form-error">{error}</p> : null}
@@ -177,12 +308,14 @@ export function MasterAdmin({
                   <input
                     type="text"
                     value={editingName}
+                    disabled={busy}
                     onChange={(event) => setEditingName(event.target.value)}
                   />
                   <div className="master-item-actions">
                     <button
                       type="button"
                       className="btn btn-primary"
+                      disabled={busy}
                       onClick={() => handleRename(item.id)}
                     >
                       保存
@@ -190,6 +323,7 @@ export function MasterAdmin({
                     <button
                       type="button"
                       className="btn btn-secondary"
+                      disabled={busy}
                       onClick={() => {
                         setEditingId(null)
                         setError('')
@@ -217,13 +351,14 @@ export function MasterAdmin({
                       <input
                         type="checkbox"
                         checked={item.treatAsDone}
+                        disabled={busy}
                         onChange={(event) =>
-                          updateItems(
-                            setTreatAsDone(
-                              items as StatusMasterItem[],
-                              item.id,
-                              event.target.checked,
-                            ),
+                          void runSave(
+                            () =>
+                              updateMasterItem(item.id, {
+                                treatAsDone: event.target.checked,
+                              }),
+                            'マスタを保存できませんでした',
                           )
                         }
                       />
@@ -234,9 +369,13 @@ export function MasterAdmin({
                     <button
                       type="button"
                       className="master-icon-btn"
-                      disabled={index === 0}
+                      disabled={busy || index === 0}
                       onClick={() =>
-                        updateItems(moveMasterItem(items, item.id, -1))
+                        void runSave(async () => {
+                          await updateMasterSortOrders(
+                            moveMasterItem(items, item.id, -1),
+                          )
+                        }, '並び順を保存できませんでした')
                       }
                     >
                       ↑ 上へ
@@ -244,9 +383,13 @@ export function MasterAdmin({
                     <button
                       type="button"
                       className="master-icon-btn"
-                      disabled={index === items.length - 1}
+                      disabled={busy || index === items.length - 1}
                       onClick={() =>
-                        updateItems(moveMasterItem(items, item.id, 1))
+                        void runSave(async () => {
+                          await updateMasterSortOrders(
+                            moveMasterItem(items, item.id, 1),
+                          )
+                        }, '並び順を保存できませんでした')
                       }
                     >
                       ↓ 下へ
@@ -254,6 +397,7 @@ export function MasterAdmin({
                     <button
                       type="button"
                       className="master-icon-btn"
+                      disabled={busy}
                       onClick={() => {
                         setEditingId(item.id)
                         setEditingName(item.name)
@@ -265,9 +409,14 @@ export function MasterAdmin({
                     <button
                       type="button"
                       className="master-icon-btn"
+                      disabled={busy}
                       onClick={() =>
-                        updateItems(
-                          setMasterEnabled(items, item.id, !item.enabled),
+                        void runSave(
+                          () =>
+                            updateMasterItem(item.id, {
+                              enabled: !item.enabled,
+                            }),
+                          'マスタを保存できませんでした',
                         )
                       }
                     >
@@ -286,15 +435,10 @@ export function MasterAdmin({
         <p>
           棟・階・場所・区分・状態の設定だけをJSONで書き出したり、Android版「管理人メモ」の設定を読み込んだりできます。メモや写真は含まれません。
         </p>
-        {settingsLoadWarning ? (
-          <p className="form-error">
-            保存されていた設定を読み込めなかったため、初期設定を使用しています
-          </p>
-        ) : null}
         <button
           type="button"
           className="btn btn-secondary"
-          disabled={migrationBusy}
+          disabled={busy || canSeed}
           onClick={() => {
             downloadSettingsJson(
               buildSharedSettingsJson(masters, { useBuilding, useFloor }),
@@ -307,7 +451,7 @@ export function MasterAdmin({
         <button
           type="button"
           className="btn btn-secondary"
-          disabled={migrationBusy}
+          disabled={busy}
           onClick={() => fileInputRef.current?.click()}
         >
           設定を読み込む
@@ -354,7 +498,7 @@ export function MasterAdmin({
         <button
           type="button"
           className="btn btn-danger-quiet"
-          disabled={migrationBusy}
+          disabled={busy}
           onClick={() => setResetOpen(true)}
         >
           初期設定に戻す
@@ -366,14 +510,14 @@ export function MasterAdmin({
           title="設定ファイルを読み込みます"
           description={`マンション：${pendingImport.mansionName}`}
           cancelLabel="キャンセル"
-          confirmLabel="読み込む"
+          confirmLabel={isSaving ? '保存中…' : '読み込む'}
           confirmTone="primary"
-          onCancel={() => setPendingImport(null)}
-          onConfirm={() => {
-            onImport(pendingImport)
-            setPendingImport(null)
-            setShareError('')
+          onCancel={() => {
+            if (!isSaving) {
+              setPendingImport(null)
+            }
           }}
+          onConfirm={() => void handleConfirmImport()}
         >
           <ul className="settings-import-counts">
             <li>棟：{pendingImport.counts.building}項目</li>
@@ -383,7 +527,7 @@ export function MasterAdmin({
             <li>状態：{pendingImport.counts.status}項目</li>
           </ul>
           <p>
-            現在のマスタ設定は読み込んだ内容に置き換わります。メモの内容は変更されません。
+            現在の共通マスタ設定は読み込んだ内容に置き換わります。メモの内容は変更されません。
           </p>
         </ConfirmDialog>
       ) : null}
@@ -391,15 +535,15 @@ export function MasterAdmin({
       {resetOpen ? (
         <ConfirmDialog
           title="マスタ設定を初期状態に戻しますか？"
-          description="メモの内容は削除されません。"
+          description="メモの内容は削除されません。全端末の共通設定が初期状態になります。"
           cancelLabel="キャンセル"
-          confirmLabel="初期設定に戻す"
-          onCancel={() => setResetOpen(false)}
-          onConfirm={() => {
-            onReset()
-            setResetOpen(false)
-            setShareError('')
+          confirmLabel={isSaving ? '保存中…' : '初期設定に戻す'}
+          onCancel={() => {
+            if (!isSaving) {
+              setResetOpen(false)
+            }
           }}
+          onConfirm={() => void handleReset()}
         />
       ) : null}
     </section>
@@ -422,25 +566,5 @@ function getItems(masters: MasterSet, category: MasterCategory) {
       return masters.categories
     case 'status':
       return masters.statuses
-  }
-}
-
-function setItems(
-  masters: MasterSet,
-  category: MasterCategory,
-  items: MasterItem[] | StatusMasterItem[],
-): MasterSet {
-  const normalized = normalizeSortOrder(items)
-  switch (category) {
-    case 'building':
-      return { ...masters, buildings: normalized }
-    case 'floor':
-      return { ...masters, floors: normalized }
-    case 'location':
-      return { ...masters, locations: normalized }
-    case 'category':
-      return { ...masters, categories: normalized }
-    case 'status':
-      return { ...masters, statuses: normalized as StatusMasterItem[] }
   }
 }

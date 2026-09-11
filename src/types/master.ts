@@ -23,3 +23,19 @@ export type MasterSet = {
   categories: MasterItem[]
   statuses: StatusMasterItem[]
 }
+
+export type SiteMasterSettings = {
+  masters: MasterSet
+  useBuilding: boolean
+  useFloor: boolean
+}
+
+export function emptyMasterSet(): MasterSet {
+  return {
+    buildings: [],
+    floors: [],
+    locations: [],
+    categories: [],
+    statuses: [],
+  }
+}

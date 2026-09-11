@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { createInitialMasters } from '../data/initialMasters'
 import { usePdfExport } from '../hooks/usePdfExport'
+import { fetchMasters } from '../services/masterService'
 import {
   createMemo,
   deleteMemo,
@@ -10,7 +10,7 @@ import {
   updateMemoStatus,
 } from '../services/memoService'
 import { EMPTY_FILTERS, isFiltersActive, type MemoFilters } from '../types/filters'
-import type { MasterSet } from '../types/master'
+import { emptyMasterSet, type MasterSet } from '../types/master'
 import type { Memo, MemoDraft, MemoPhoto, TabId } from '../types/memo'
 import { toUserMessage } from '../utils/appError'
 import {
@@ -26,10 +26,7 @@ import {
 import { mergeLoadedMemo } from '../utils/memoMapper'
 import { downloadPdf } from '../utils/pdf/downloadPdf'
 import { revokePhotoUrl } from '../utils/photos'
-import {
-  loadSiteSettings,
-  saveSiteSettings,
-} from '../utils/siteSettingsStorage'
+import { saveSiteSettings } from '../utils/siteSettingsStorage'
 import { FreeMemo } from './FreeMemo'
 import { Header } from './Header'
 import { MasterAdmin } from './MasterAdmin'
@@ -41,6 +38,11 @@ import { MemoTabs } from './MemoTabs'
 
 type View = 'list' | 'new' | 'detail' | 'edit' | 'admin'
 type LoadState = 'loading' | 'ready' | 'error'
+type MasterLoadState = 'loading' | 'ready' | 'empty' | 'error'
+
+const MASTER_FETCH_ERROR =
+  'マスタ設定を取得できませんでした。更新してください。'
+const MEMO_FETCH_ERROR = 'メモを読み込めませんでした'
 
 type MemoAppProps = {
   userId: string
@@ -64,10 +66,11 @@ export function MemoApp({
   const [detailError, setDetailError] = useState<string | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
-  const [siteSettings] = useState(loadSiteSettings)
-  const [masters, setMasters] = useState<MasterSet>(siteSettings.masters)
-  const [useBuilding, setUseBuilding] = useState(siteSettings.useBuilding)
-  const [useFloor, setUseFloor] = useState(siteSettings.useFloor)
+  const [masters, setMasters] = useState<MasterSet>(emptyMasterSet)
+  const [useBuilding, setUseBuilding] = useState(true)
+  const [useFloor, setUseFloor] = useState(true)
+  const [masterLoadState, setMasterLoadState] = useState<MasterLoadState>('loading')
+  const [masterError, setMasterError] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [filters, setFilters] = useState<MemoFilters>(EMPTY_FILTERS)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
@@ -84,8 +87,6 @@ export function MemoApp({
     async (mode: 'initial' | 'refresh' = 'initial') => {
       if (mode === 'initial') {
         setLoadState('loading')
-      } else {
-        setIsRefreshing(true)
       }
       setLoadError(null)
       try {
@@ -99,29 +100,135 @@ export function MemoApp({
         if (mode === 'initial') {
           setLoadState('error')
         }
-      } finally {
-        setIsRefreshing(false)
       }
     },
     [applyMemos],
   )
 
-  useEffect(() => {
-    void loadMemos('initial')
-  }, [loadMemos])
-
-  useEffect(() => {
-    try {
-      saveSiteSettings({ masters, useBuilding, useFloor })
-    } catch {
-      // プライベートモード等で保存できない場合も画面は継続する
-    }
-  }, [masters, useBuilding, useFloor])
-
-  const tabMemos = useMemo(
-    () => filterMemos(memos, tab, masters.statuses),
-    [memos, tab, masters.statuses],
+  const applyMasterSettings = useCallback(
+    (settings: {
+      masters: MasterSet
+      useBuilding: boolean
+      useFloor: boolean
+      isEmpty?: boolean
+    }) => {
+      setMasters(settings.masters)
+      setUseBuilding(settings.useBuilding)
+      setUseFloor(settings.useFloor)
+      setMasterLoadState(settings.isEmpty ? 'empty' : 'ready')
+      setMasterError(null)
+      if (settings.isEmpty) {
+        return
+      }
+      try {
+        saveSiteSettings({
+          masters: settings.masters,
+          useBuilding: settings.useBuilding,
+          useFloor: settings.useFloor,
+        })
+      } catch {
+        // バックアップ保存に失敗しても画面は継続する
+      }
+    },
+    [],
   )
+
+  const loadMasters = useCallback(
+    async (mode: 'initial' | 'refresh' = 'initial') => {
+      if (mode === 'initial') {
+        setMasterLoadState('loading')
+      }
+      setMasterError(null)
+      try {
+        const loaded = await fetchMasters()
+        applyMasterSettings(loaded)
+      } catch (error) {
+        setMasterError(toUserMessage(error, MASTER_FETCH_ERROR))
+        if (mode === 'initial') {
+          setMasterLoadState('error')
+        }
+        throw error
+      }
+    },
+    [applyMasterSettings],
+  )
+
+  const refreshAll = useCallback(
+    async (mode: 'initial' | 'refresh' = 'initial') => {
+      if (mode === 'refresh') {
+        setIsRefreshing(true)
+      } else {
+        setMasterLoadState('loading')
+        setLoadState('loading')
+      }
+      setMasterError(null)
+      setLoadError(null)
+
+      const [masterResult, memoResult] = await Promise.allSettled([
+        fetchMasters(),
+        fetchMemos(),
+      ])
+
+      try {
+        if (
+          masterResult.status === 'rejected' ||
+          memoResult.status === 'rejected'
+        ) {
+          if (
+            mode === 'initial' &&
+            masterResult.status === 'fulfilled'
+          ) {
+            applyMasterSettings(masterResult.value)
+          }
+          const masterMessage =
+            masterResult.status === 'rejected'
+              ? toUserMessage(masterResult.reason, MASTER_FETCH_ERROR)
+              : null
+          const memoMessage =
+            memoResult.status === 'rejected'
+              ? toUserMessage(memoResult.reason, MEMO_FETCH_ERROR)
+              : null
+          if (masterMessage) {
+            setMasterError(
+              memoMessage
+                ? `${masterMessage}\n${memoMessage}`
+                : masterMessage,
+            )
+            setMasterLoadState('error')
+          }
+          if (memoMessage) {
+            setLoadError(memoMessage)
+            setLoadState('error')
+          }
+          return
+        }
+
+        applyMasterSettings(masterResult.value)
+        applyMemos(memoResult.value)
+        setLoadState('ready')
+        try {
+          const withFirst = await hydrateMemoPhotos(memoResult.value, 'first')
+          applyMemos(withFirst)
+        } catch {
+          // 写真の後読み失敗は、成功したメモ／マスタの表示を取り消さない
+        }
+      } finally {
+        setIsRefreshing(false)
+      }
+    },
+    [applyMasterSettings, applyMemos],
+  )
+
+  useEffect(() => {
+    void refreshAll('initial')
+  }, [refreshAll])
+
+  const tabMemos = useMemo(() => {
+    if (masterLoadState !== 'ready') {
+      return []
+    }
+    return filterMemos(memos, tab, masters.statuses)
+  }, [masterLoadState, memos, tab, masters.statuses])
 
   const visibleMemos = useMemo(
     () => sortByNewestCreated(filterMemosBySearch(tabMemos, filters)),
@@ -282,19 +389,21 @@ export function MemoApp({
             masters={masters}
             useBuilding={useBuilding}
             useFloor={useFloor}
-            settingsLoadWarning={siteSettings.usedFallback}
-            onChange={setMasters}
-            onImport={(settings) => {
-              setMasters(settings.masters)
-              setUseBuilding(settings.useBuilding)
-              setUseFloor(settings.useFloor)
+            canSeed={masterLoadState === 'empty'}
+            syncLabel={
+              masterLoadState === 'empty'
+                ? '共通設定：未登録'
+                : masterLoadState === 'ready'
+                  ? '設定保存先：Supabase'
+                  : masterLoadState === 'error'
+                    ? '共通設定：取得できませんでした'
+                    : '共通設定：読み込み中…'
+            }
+            onReload={async () => {
+              await loadMasters('refresh')
             }}
+            onApply={applyMasterSettings}
             onMemosImported={() => void loadMemos('refresh')}
-            onReset={() => {
-              setMasters(createInitialMasters())
-              setUseBuilding(true)
-              setUseFloor(true)
-            }}
             onBack={handleBackToList}
           />
         </main>
@@ -309,6 +418,7 @@ export function MemoApp({
                   <button
                     type="button"
                     className="new-memo-btn"
+                    disabled={masterLoadState !== 'ready'}
                     onClick={() => setView('new')}
                   >
                     ＋ 新規メモ
@@ -317,7 +427,11 @@ export function MemoApp({
                     <button
                       type="button"
                       className="btn btn-secondary pdf-btn"
-                      disabled={listPdf.busy || loadState !== 'ready'}
+                      disabled={
+                        listPdf.busy ||
+                        loadState !== 'ready' ||
+                        masterLoadState !== 'ready'
+                      }
                       onClick={() =>
                         listPdf.run(async () => {
                           const hydrated = await hydrateMemoPhotos(
@@ -342,8 +456,12 @@ export function MemoApp({
                     <button
                       type="button"
                       className="btn btn-secondary refresh-btn"
-                      disabled={isRefreshing || loadState === 'loading'}
-                      onClick={() => void loadMemos('refresh')}
+                      disabled={
+                        isRefreshing ||
+                        loadState === 'loading' ||
+                        masterLoadState === 'loading'
+                      }
+                      onClick={() => void refreshAll('refresh')}
                     >
                       {isRefreshing ? '更新中…' : '更新'}
                     </button>
@@ -357,6 +475,34 @@ export function MemoApp({
               <MemoTabs value={tab} onChange={setTab} />
               {tab === 'free' ? (
                 <FreeMemo userId={userId} />
+              ) : masterLoadState === 'loading' ? (
+                <p className="memo-empty">設定を読み込み中…</p>
+              ) : masterLoadState === 'error' ? (
+                <div className="memo-load-error">
+                  <p className="form-error">
+                    {masterError ?? MASTER_FETCH_ERROR}
+                  </p>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => void refreshAll('initial')}
+                  >
+                    再読み込み
+                  </button>
+                </div>
+              ) : masterLoadState === 'empty' ? (
+                <div className="memo-load-error">
+                  <p className="form-error">
+                    共通のマスタ設定がまだ登録されていません。管理画面からこの端末の設定を登録してください。
+                  </p>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setView('admin')}
+                  >
+                    管理画面を開く
+                  </button>
+                </div>
               ) : loadState === 'loading' ? (
                 <p className="memo-empty">メモを読み込み中…</p>
               ) : loadState === 'error' ? (
@@ -365,7 +511,7 @@ export function MemoApp({
                   <button
                     type="button"
                     className="btn btn-secondary"
-                    onClick={() => void loadMemos('initial')}
+                    onClick={() => void refreshAll('initial')}
                   >
                     再読み込み
                   </button>
