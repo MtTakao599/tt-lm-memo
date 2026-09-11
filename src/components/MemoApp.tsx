@@ -74,6 +74,7 @@ export function MemoApp({
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [filters, setFilters] = useState<MemoFilters>(EMPTY_FILTERS)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [freeMemoReloadToken, setFreeMemoReloadToken] = useState(0)
   const listPdf = usePdfExport()
 
   const applyMemos = useCallback((next: Memo[]) => {
@@ -413,7 +414,21 @@ export function MemoApp({
         <main className="main">
           {view === 'list' ? (
             <>
-              {tab !== 'free' ? (
+              {tab === 'free' ? (
+                <div className="list-actions">
+                  <div className="list-toolbar">
+                    <button
+                      type="button"
+                      className="btn btn-secondary refresh-btn"
+                      onClick={() =>
+                        setFreeMemoReloadToken((token) => token + 1)
+                      }
+                    >
+                      更新
+                    </button>
+                  </div>
+                </div>
+              ) : (
                 <div className="list-actions">
                   <button
                     type="button"
@@ -471,10 +486,10 @@ export function MemoApp({
                   ) : null}
                   {notice ? <p className="form-error">{notice}</p> : null}
                 </div>
-              ) : null}
+              )}
               <MemoTabs value={tab} onChange={setTab} />
               {tab === 'free' ? (
-                <FreeMemo userId={userId} />
+                <FreeMemo userId={userId} reloadToken={freeMemoReloadToken} />
               ) : masterLoadState === 'loading' ? (
                 <p className="memo-empty">設定を読み込み中…</p>
               ) : masterLoadState === 'error' ? (

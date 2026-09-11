@@ -71,6 +71,13 @@ export type MemoSiteSettingsRow = {
   updated_at: string
 }
 
+export type UserFreeMemoRow = {
+  user_id: string
+  content: string
+  created_at: string
+  updated_at: string
+}
+
 export type MemoUpdate = {
   building?: string
   floor?: string
