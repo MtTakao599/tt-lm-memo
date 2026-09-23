@@ -6,7 +6,7 @@ import { useAuth } from './hooks/useAuth'
 import './App.css'
 
 function App() {
-  const { user, isLoading, signOut } = useAuth()
+  const { user, isLoading, isPasswordRecovery, signOut } = useAuth()
   const [isSigningOut, setIsSigningOut] = useState(false)
 
   async function handleSignOut() {
@@ -25,7 +25,7 @@ function App() {
     return <AuthLoading />
   }
 
-  if (!user) {
+  if (!user || isPasswordRecovery) {
     return <Login />
   }
 
