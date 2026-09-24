@@ -17,6 +17,7 @@ export function filterMemos(
     case 'all':
       return memos
     case 'free':
+    case 'handwritten':
       return []
   }
 }

@@ -28,6 +28,7 @@ import { downloadPdf } from '../utils/pdf/downloadPdf'
 import { revokePhotoUrl } from '../utils/photos'
 import { saveSiteSettings } from '../utils/siteSettingsStorage'
 import { FreeMemo } from './FreeMemo'
+import { HandwrittenNotes } from './HandwrittenNotes'
 import { Header } from './Header'
 import { MasterAdmin } from './MasterAdmin'
 import { MemoDetail } from './MemoDetail'
@@ -414,7 +415,7 @@ export function MemoApp({
         <main className="main">
           {view === 'list' ? (
             <>
-              {tab === 'free' ? (
+              {tab === 'handwritten' ? null : tab === 'free' ? (
                 <div className="list-actions">
                   <div className="list-toolbar">
                     <button
@@ -490,6 +491,8 @@ export function MemoApp({
               <MemoTabs value={tab} onChange={setTab} />
               {tab === 'free' ? (
                 <FreeMemo userId={userId} reloadToken={freeMemoReloadToken} />
+              ) : tab === 'handwritten' ? (
+                <HandwrittenNotes userId={userId} />
               ) : masterLoadState === 'loading' ? (
                 <p className="memo-empty">設定を読み込み中…</p>
               ) : masterLoadState === 'error' ? (

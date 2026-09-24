@@ -1,4 +1,4 @@
-export type TabId = 'today' | 'open' | 'all' | 'free'
+export type TabId = 'today' | 'open' | 'all' | 'free' | 'handwritten'
 
 export type MemoPhoto = {
   id: string

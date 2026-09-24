@@ -78,6 +78,16 @@ export type UserFreeMemoRow = {
   updated_at: string
 }
 
+export type HandwrittenNoteRow = {
+  id: string
+  user_id: string
+  title: string
+  drawing_data: unknown
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
 export type MemoUpdate = {
   building?: string
   floor?: string

@@ -135,7 +135,7 @@
 
 .memo-tabs {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 6px;
   margin: 16px 0;
   max-width: 100%;
@@ -1276,4 +1276,161 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   font-size: 16px;
+}
+
+.ink-list,
+.ink-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ink-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ink-item {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  padding: 8px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.ink-open {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  color: inherit;
+}
+
+.ink-preview {
+  width: 96px;
+  height: 64px;
+  flex: 0 0 auto;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: #fff;
+}
+
+.ink-item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ink-item-title {
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ink-item-time {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.ink-delete {
+  flex: 0 0 auto;
+  align-self: center;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--color-open);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-open);
+  font-weight: 700;
+}
+
+.ink-editor-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.ink-back {
+  width: auto;
+  min-width: 120px;
+}
+
+.ink-title {
+  flex: 1;
+  min-width: min(100%, 220px);
+}
+
+.ink-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ink-tool {
+  width: auto;
+  min-width: 44px;
+  min-height: 40px;
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.ink-tool.is-active {
+  background: var(--color-navy);
+  border-color: var(--color-navy);
+  color: #fff;
+}
+
+.ink-tool:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.ink-stage {
+  height: min(70vh, 720px);
+  min-height: 320px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: #fff;
+  overflow: hidden;
+  touch-action: none;
+  overscroll-behavior: none;
+}
+
+.ink-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+@media (max-width: 720px) {
+  .memo-tab {
+    font-size: 0.75rem;
+    padding: 8px 2px;
+  }
+
+  .ink-preview {
+    width: 72px;
+    height: 48px;
+  }
 }
